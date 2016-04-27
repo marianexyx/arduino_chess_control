@@ -1,2 +1,2 @@
 # arduino_chess_control
-Program na Arduino IDE będący łącznikiem elektroniki i mechaniki z komputerem.
+Program na Arduino IDE będący łącznikiem elektroniki i mechaniki z komputerem sterującym.
