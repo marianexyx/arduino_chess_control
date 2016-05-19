@@ -46,6 +46,7 @@ int n_wsp_ruchu = 65; //współczynnik definiujący ilość pojedyńczych skokó
 bool b_przerywanie_petli = false; //przerywa pętle po wstepnym ustawieniu serw (by wykonało tylko jedną iterację, anie wszystkie z "n_wsp_ruchu").
 bool b_show_info = false; // jeżeli = true, to wypluwa na serial port tonę informacji o swoim stanie podczas działania. by działać z core'm musi być ustawione na false.
 bool b_sekwencja_ruchow = false; //definiuje czy ruch jest spowodowany ręcznie (false), czy przez core (true). wartości core'a zmieniają tą zmienną.
+bool b_znaki_koncow_linii = true; //definiuje czy dodajemy w funkcji znaki dla początku i końca wiadomości dla poprawnej komunikacji asynchronicznej z core'm
 String Str_move_case = "none"; //zmienna po której komunikuje się arduino z core'em, tj. mówi mu co aktualnie za żądanych ruch wykonał.
 int n_wsp_ks2 = 200; //pomocniczna zmienna tutaj, by nie wpisywac jej 5 razy w kodzie. na jej podstawie obliczany jest kąt serwa szczęki nr2
 float f_wektor_odchylek[] = { -11, -10.9, -10.8, -10.7, -10.6, -10.5, -10.4, -10.3, -10.2, -10.1, -10, -9.7, -9.4, -9.1, -8.8, -8.5, -8.2, -7.9, -7.6, -7.3, -7, -7.3, -7.6, -7.9, -8.2,
@@ -154,7 +155,7 @@ void loop() //wieczna główna pętla programu
   //w powyższym warunku głównie była zmieniana wartość zmiennej Str_move_case. tutaj jest wykonywana reszta/większa część ruchów, gdzie np. wartość up2 wpada do warunku wyżej i tu.
   if (stringOne.substring(0, 5) == "reset") //funckja serwisowa. ustawia serwa na pozycję startową
   {
-    Serial.println("Reset"); Serial.println("kat szczeki = 90, kat podstawy = 90, ");
+    AnswerToCore("","Reset: kat szczeki = 90, kat podstawy = 90");
     y = b; z = z1 + a; PrintPosToLCD("y", y); PrintPosToLCD("z", z); //ustawienia wynikajace z katow = 90
     stringOne = "(184,296)"; //to samo co wyzej
     n_katSzczeki = 90; n_katPodstawa = 90;
@@ -261,10 +262,10 @@ void loop() //wieczna główna pętla programu
       Serial.println(n_katSzczeki);
     }
     //poniżej warunki gdy jest wykonywany oficjalny ruch bierki podczas rozgrywki
-    if (stringOne.substring(0, 5) == "open1" && b_sekwencja_ruchow == true) Serial.println("opened1"); //nie wiem czy te prinln nie powinny być na samym końcu pętli. póki co działa.
-    else if (stringOne.substring(0, 5) == "open2" && b_sekwencja_ruchow == true) Serial.println("opened2");
-    else if (stringOne.substring(0, 6) == "openR1" && b_sekwencja_ruchow == true) Serial.println("openedR1");
-    else if (stringOne.substring(0, 6) == "openR2" && b_sekwencja_ruchow == true) Serial.println("openedR2");
+    if (stringOne.substring(0, 5) == "open1" && b_sekwencja_ruchow == true) AnswerToCore("","opened1"); //nie wiem czy te prinln nie powinny być na samym końcu pętli. póki co działa.
+    else if (stringOne.substring(0, 5) == "open2" && b_sekwencja_ruchow == true) AnswerToCore("","opened2");
+    else if (stringOne.substring(0, 6) == "openR1" && b_sekwencja_ruchow == true) AnswerToCore("","openedR1");
+    else if (stringOne.substring(0, 6) == "openR2" && b_sekwencja_ruchow == true) AnswerToCore("","openedR2");
     stringOne = "";
   }
   else if (stringOne.substring(0, 5) == "close") //analogicznie do open
@@ -276,8 +277,8 @@ void loop() //wieczna główna pętla programu
       Serial.print("closed. katSzczeki = ");
       Serial.println(n_katSzczeki);
     }
-    if (stringOne.substring(0, 6) == "close1" && b_sekwencja_ruchow == true) Serial.println("closed1");
-    else if (stringOne.substring(0, 6) == "closeR" && b_sekwencja_ruchow == true) Serial.println("closedR");
+    if (stringOne.substring(0, 6) == "close1" && b_sekwencja_ruchow == true) AnswerToCore("","closed1");
+    else if (stringOne.substring(0, 6) == "closeR" && b_sekwencja_ruchow == true) AnswerToCore("","closedR");
     stringOne = "";
   }
   else if (stringOne.substring(0, 7) == "turn on" || stringOne.substring(0, 7) == "turn_on" || stringOne.substring(0, 6) == "turnon")
@@ -288,42 +289,44 @@ void loop() //wieczna główna pętla programu
     {
       digitalWrite(SERVO_POWER_PIN1, LOW);
       digitalWrite(SERVO_POWER_PIN2, LOW);
-      Serial.println("turn on servo power");
+      AnswerToCore("","turn on servo power");
     }
-    else Serial.println("ERROR: power supply is turned off.");
+    else AnswerToCore("","ERROR: power supply is turned off.");
     stringOne = "";
   }
   else if (stringOne.substring(0, 8) == "turn off" || stringOne.substring(0, 8) == "turn_off" || stringOne.substring(0, 7) == "turnoff")
   { //wyłączenie serw. jeżeli nie jest łapa dobrze oparta, to runie ona o podłoże. wprowadzić funkcję auto podpierania przed wyłączeniem.
     digitalWrite(SERVO_POWER_PIN1, HIGH);
     digitalWrite(SERVO_POWER_PIN2, HIGH);
-    Serial.println("turn off servo power");
+    AnswerToCore("","turn off servo power");
     stringOne = "";
   }
   else if (stringOne.substring(0, 8) == "power on" || stringOne.substring(0, 8) == "power_on" || stringOne.substring(0, 7) == "poweron")
   { //włącz zasilacz (jeżeli nie jest włączony ręcznie)
     digitalWrite(POWER_LED_PIN, HIGH);
     digitalWrite(POWER_PIN, HIGH);
-    Serial.println("power on");
+    AnswerToCore("","power on");
     stringOne = "";
   }
   else if (stringOne.substring(0, 9) == "power off" || stringOne.substring(0, 9) == "power_off" || stringOne.substring(0, 8) == "poweroff")
   { //analogicznie do włącz
     digitalWrite(POWER_LED_PIN, LOW);
     digitalWrite(POWER_PIN, LOW);
-    Serial.println("power off");
+    AnswerToCore("","power off");
     stringOne = "";
   }
   else if (stringOne.substring(0, 7) == "info on" || stringOne.substring(0, 7) == "info_on" || stringOne.substring(0, 6) == "infoon")
   { //pokazuj stan wszystkiego co się dzieje na procku (wyrzucaj info na port). włączamy do prac serwisowych. włączenie gry automatycznie wyłączy.
     b_show_info = true;
-    Serial.println("info on");
+    b_znaki_koncow_linii = false; //usuwaj znaki początku i końca linii w wiadomościach do core
+    AnswerToCore("","info on");
     stringOne = "";
   }
   else if (stringOne.substring(0, 8) == "info off" || stringOne.substring(0, 8) == "info_off" || stringOne.substring(0, 7) == "infooff")
   { //wyłącz info- analogicznie do tego powyżej. arduino jest po starcie na "info off"
     b_show_info = false;
-    Serial.println("info off");
+    b_znaki_koncow_linii = true; //pokazuj znaki początku i końca linii w wiadomościach do core
+    AnswerToCore("","info off");
     stringOne = "";
   }
 
@@ -526,7 +529,9 @@ void loop() //wieczna główna pętla programu
       }
       //pre_beta_rad = (a*a + b*b - L*L) / (2*a*b); /*obliczanie bety w radianach bez acos*/ //Serial.print("pre_beta_rad= "); Serial.println(pre_beta_rad);
       beta_rad = acos((a * a + b * b - L * L) / (2 * a * b)); /*obliczanie bety w radianach*/ //Serial.print("beta_rad= "); Serial.println(beta_rad);
-      beta = (180 / PI) * beta_rad; /*kąt beta docelowy.*/ if (b_show_info == true) {
+      beta = (180 / PI) * beta_rad; /*kąt beta docelowy.*/ 
+      if (b_show_info == true) 
+      {
         Serial.print(", beta= ");
         Serial.print(beta);
       }
@@ -605,17 +610,16 @@ void loop() //wieczna główna pętla programu
     {
       if (Str_move_case == "armUp2") //... i jeżeli był to ostatni ruch z sekwencji przemieszczania pionka...
       {
-        servoA.write(110, n_servo_speed, false); PrintAngleToLCD("servoA"); //... to ustaw się na środku planszy kątem podstawy...
-        b_sekwencja_ruchow = false; //... i nie wykonuj już więcej funkcji związanym z grą na stronie WWW
+        servoA.write(110, n_servo_speed, false); PrintAngleToLCD("servoA"); //... to serwem podstawy ustaw się na środku planszy ...
+        b_sekwencja_ruchow = false; //... i nie wykonuj już więcej funkcji związanym z grą na stronie WWW...
       }
-      Serial.print(Str_move_case); //... a na końcu wyślij do core informację o tym jaki żądany ruch z core'a został wykonany...
-      //... a jeżeli żądanie ruch zawierał pole nad które miała się łapa ruszyć, to do informacji zwrotnej dopisz też informację o tym jakie to było pole (zbędna ochrona)...
+       //... a na końcu wyślij do core informację o tym jaki żądany ruch z core'a został wykonany:
+      // jeżeli żądanie ruchu zawierało pole nad które miała się łapa ruszyć, to do informacji zwrotnej dopisz też informację o tym jakie to było pole (zbędna ochrona)...
       if (Str_move_case == "movedFrom" || Str_move_case == "movedTo" || Str_move_case == "movedToR") {
-        Serial.print(" ");
-        Serial.print(Str_litera_pola);
-        Serial.println(n_wsp_n);
+        String Str_sqare = " " + (String)Str_litera_pola + (String)n_wsp_n;
+        AnswerToCore(Str_move_case,Str_sqare);
       }
-      else Serial.println(""); //...koniec końców wyślij do core'a na końcu informacji: "enter"
+      else AnswerToCore(Str_move_case,""); //...a dla innych ruchów wyślij samą odpowiedź o wykonanym ruchu.
       // !!w rdzeniu (core) mam stare ustawienia wg których każda wiadomość kończy się dolarem. zobaczyć czy to coś psuje (nie widać by coś się złego działo).
     }
     stringOne = ""; //po przejściu przez cały program wyczyść tą zmienną, by w kolejnym przejściu nie został uruchomiony któryś warunek.
@@ -623,7 +627,19 @@ void loop() //wieczna główna pętla programu
   }
 }
 
-
+void AnswerToCore(String Str_msg1, String Str_msg2)
+{
+  if (b_znaki_koncow_linii)
+  {
+    String Str_answer = "@" + Str_msg1 + Str_msg2 + "$";
+    Serial.print(Str_answer);
+  }
+  else
+  {
+    Serial.print(Str_msg1);
+    Serial.println(Str_msg2);
+  }
+}
 
 void PrintAngleToLCD(String Str_servo)
 {
@@ -720,5 +736,4 @@ void PrintPosToLCD(String Str_pos, int n_axis_pos)
     }
   }
 }
-
 
