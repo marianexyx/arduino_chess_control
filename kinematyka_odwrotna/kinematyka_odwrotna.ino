@@ -42,7 +42,8 @@ int n_servo_speed = 18; //predkosc dla serw podczas wstepnego ustawiania. warto�
 const int SERVO_SPEED = n_servo_speed; //podczas pracy ramienia prędkość ruchu serw jest zmieniana. by wracać to pierwotnej używamy tej stałej.
 int n_speed_changed = 0; // program co zakończenie ruchu ustawia sobie zdefiniowaną stałą prędkość ruchu ramienia. jeżeli ręcznie zmienimy tą prędkość funkcją serwisową "speed ="...
 //...to będzie utrzymywał prędkość tej tutaj zmiennej. 0 na starcie by omijać tą zmienną jak nic nie ruszymy.
-int n_wsp_ruchu = 65; //współczynnik definiujący ilość pojedyńczych skoków/iteracji w ruchu ramienia (jego przenoszenia). wartość na wyczucie.
+int n_servo_speed_updown = 2; // normalnie jest 2
+int n_wsp_ruchu = 65; // ustawione na 65 było //współczynnik definiujący ilość pojedyńczych skoków/iteracji w ruchu ramienia (jego przenoszenia). wartość na wyczucie.
 bool b_przerywanie_petli = false; //przerywa pętle po wstepnym ustawieniu serw (by wykonało tylko jedną iterację, anie wszystkie z "n_wsp_ruchu").
 bool b_show_info = false; // jeżeli = true, to wypluwa na serial port tonę informacji o swoim stanie podczas działania. by działać z core'm musi być ustawione na false.
 bool b_sekwencja_ruchow = false; //definiuje czy ruch jest spowodowany ręcznie (false), czy przez core (true). wartości core'a zmieniają tą zmienną.
@@ -120,14 +121,21 @@ void loop() //wieczna główna pętla programu
   { //wiadomość oznacza żądanie przeniesienia pionka "z pozycji (f-from)". w tym ruchu ustawiane jest ramie w pukncie P nad pionkiem do podniesienia.
     b_show_info = false; //na wszelki wypadek wyłącz pokazywanie innych informacji (rozwaliły by komunikację)
     b_sekwencja_ruchow = true; //rozpoczęto rozmowe z core'm, więc niektóre ruchy wykonywać mają się trochę inaczej
-    Str_move_case = "movedFrom"; //zostaje ustawiona zmienna, która po wykonaniu ruchu przez łapę zostanie wysłana core, jako potwierdzenie tego co miało się wykonać (i czekanie na...
+    if (stringOne.substring(5, 6) == "c") Str_move_case = "movedFromC";
+    else if (stringOne.substring(5, 6) == "w") Str_move_case = "movedFromW";
+    else Str_move_case = "movedFrom"; //zostaje ustawiona zmienna, która po wykonaniu ruchu przez łapę zostanie wysłana core, jako potwierdzenie tego co miało się wykonać (i czekanie na...
     //...kolejny sygnał z sekwencji ruchów
   }
   //open1 przechwytywane w substringu "open" //pierwsze otworzenie szczęk ramienia...
   else if (stringOne.substring(0, 5) == "down1") Str_move_case = "armDown1"; //...pierwsze zejście ramienia na dół...
   //close1 przechwytywane w substringu "close" //...pierwsze zamknięcie szczęk ramienia na bierce...
   else if (stringOne.substring(0, 3) == "up1") Str_move_case = "armUp1"; //...pierwsze uniesienie ramienia ku górze...
-  else if (stringOne.substring(3, 5) == "]t") Str_move_case = "movedTo"; //...przeniesienie łapy nad pole planszy na którym przechwycona bierka ma wylądować...
+  else if (stringOne.substring(3, 5) == "]t")
+  {
+    if (stringOne.substring(5, 6) == "c") Str_move_case = "movedToC";
+    else if (stringOne.substring(5, 6) == "w") Str_move_case = "movedToW";
+    else Str_move_case = "movedTo"; //...przeniesienie łapy nad pole planszy na którym przechwycona bierka ma wylądować...
+  }
   else if (stringOne.substring(0, 5) == "down2") Str_move_case = "armDown2"; //...drugie zejście na dół (na pole docelowe)...
   //open2 przechwytywane w substringu "open" //...drugie otwarcie szczęk ramienia...
   else if (stringOne.substring(0, 3) == "up2") Str_move_case = "armUp2"; //...odjechanie na górę i koniec. czekanie na kolejne komendy.
@@ -152,10 +160,20 @@ void loop() //wieczna główna pętla programu
   }
   //openR2 przechwytywane w substringu "open"
 
+  //warunki roszady:
+  else if (stringOne.substring(0, 4) == "upC1") Str_move_case = "armUpC1";
+  else if (stringOne.substring(0, 4) == "upC2") Str_move_case = "armUpC2";
+  else if (stringOne.substring(0, 4) == "upC3") Str_move_case = "armUpC3";
+  else if (stringOne.substring(0, 4) == "upC4") Str_move_case = "armUpC4";
+  else if (stringOne.substring(0, 6) == "downC1") Str_move_case = "armDownC1";
+  else if (stringOne.substring(0, 6) == "downC2") Str_move_case = "armDownC2";
+  else if (stringOne.substring(0, 6) == "downC3") Str_move_case = "armDownC3";
+  else if (stringOne.substring(0, 6) == "downC4") Str_move_case = "armDownC4";
+
   //w powyższym warunku głównie była zmieniana wartość zmiennej Str_move_case. tutaj jest wykonywana reszta/większa część ruchów, gdzie np. wartość up2 wpada do warunku wyżej i tu.
   if (stringOne.substring(0, 5) == "reset") //funckja serwisowa. ustawia serwa na pozycję startową
   {
-    AnswerToCore("","Reset: kat szczeki = 90, kat podstawy = 90");
+    AnswerToCore("", "Reset: kat szczeki = 90, kat podstawy = 90");
     y = b; z = z1 + a; PrintPosToLCD("y", y); PrintPosToLCD("z", z); //ustawienia wynikajace z katow = 90
     stringOne = "(184,296)"; //to samo co wyzej
     n_katSzczeki = 90; n_katPodstawa = 90;
@@ -262,10 +280,13 @@ void loop() //wieczna główna pętla programu
       Serial.println(n_katSzczeki);
     }
     //poniżej warunki gdy jest wykonywany oficjalny ruch bierki podczas rozgrywki
-    if (stringOne.substring(0, 5) == "open1" && b_sekwencja_ruchow == true) AnswerToCore("","opened1"); //nie wiem czy te prinln nie powinny być na samym końcu pętli. póki co działa.
-    else if (stringOne.substring(0, 5) == "open2" && b_sekwencja_ruchow == true) AnswerToCore("","opened2");
-    else if (stringOne.substring(0, 6) == "openR1" && b_sekwencja_ruchow == true) AnswerToCore("","openedR1");
-    else if (stringOne.substring(0, 6) == "openR2" && b_sekwencja_ruchow == true) AnswerToCore("","openedR2");
+    if (stringOne.substring(0, 5) == "open1" && b_sekwencja_ruchow == true) AnswerToCore("", "opened1"); //nie wiem czy te prinln nie powinny być na samym końcu pętli. póki co działa.
+    else if (stringOne.substring(0, 5) == "open2" && b_sekwencja_ruchow == true) AnswerToCore("", "opened2");
+    else if (stringOne.substring(0, 6) == "openR1" && b_sekwencja_ruchow == true) AnswerToCore("", "openedR1");
+    else if (stringOne.substring(0, 6) == "openR2" && b_sekwencja_ruchow == true) AnswerToCore("", "openedR2");
+    else if (stringOne.substring(0, 6) == "openC1" && b_sekwencja_ruchow == true) AnswerToCore("", "openedC1");
+    else if (stringOne.substring(0, 6) == "openC2" && b_sekwencja_ruchow == true) AnswerToCore("", "openedC2");
+    else if (stringOne.substring(0, 6) == "openC3" && b_sekwencja_ruchow == true) AnswerToCore("", "openedC3");
     stringOne = "";
   }
   else if (stringOne.substring(0, 5) == "close") //analogicznie do open
@@ -277,8 +298,10 @@ void loop() //wieczna główna pętla programu
       Serial.print("closed. katSzczeki = ");
       Serial.println(n_katSzczeki);
     }
-    if (stringOne.substring(0, 6) == "close1" && b_sekwencja_ruchow == true) AnswerToCore("","closed1");
-    else if (stringOne.substring(0, 6) == "closeR" && b_sekwencja_ruchow == true) AnswerToCore("","closedR");
+    if (stringOne.substring(0, 6) == "close1" && b_sekwencja_ruchow == true) AnswerToCore("", "closed1");
+    else if (stringOne.substring(0, 6) == "closeR" && b_sekwencja_ruchow == true) AnswerToCore("", "closedR");
+    else if (stringOne.substring(0, 7) == "closeC1" && b_sekwencja_ruchow == true) AnswerToCore("", "closedC1");
+    else if (stringOne.substring(0, 7) == "closeC2" && b_sekwencja_ruchow == true) AnswerToCore("", "closedC2");
     stringOne = "";
   }
   else if (stringOne.substring(0, 7) == "turn on" || stringOne.substring(0, 7) == "turn_on" || stringOne.substring(0, 6) == "turnon")
@@ -289,44 +312,44 @@ void loop() //wieczna główna pętla programu
     {
       digitalWrite(SERVO_POWER_PIN1, LOW);
       digitalWrite(SERVO_POWER_PIN2, LOW);
-      AnswerToCore("","turn on servo power");
+      AnswerToCore("", "turn on servo power");
     }
-    else AnswerToCore("","ERROR: power supply is turned off.");
+    else AnswerToCore("", "ERROR: power supply is turned off.");
     stringOne = "";
   }
   else if (stringOne.substring(0, 8) == "turn off" || stringOne.substring(0, 8) == "turn_off" || stringOne.substring(0, 7) == "turnoff")
   { //wyłączenie serw. jeżeli nie jest łapa dobrze oparta, to runie ona o podłoże. wprowadzić funkcję auto podpierania przed wyłączeniem.
     digitalWrite(SERVO_POWER_PIN1, HIGH);
     digitalWrite(SERVO_POWER_PIN2, HIGH);
-    AnswerToCore("","turn off servo power");
+    AnswerToCore("", "turn off servo power");
     stringOne = "";
   }
   else if (stringOne.substring(0, 8) == "power on" || stringOne.substring(0, 8) == "power_on" || stringOne.substring(0, 7) == "poweron")
   { //włącz zasilacz (jeżeli nie jest włączony ręcznie)
     digitalWrite(POWER_LED_PIN, HIGH);
     digitalWrite(POWER_PIN, HIGH);
-    AnswerToCore("","power on");
+    AnswerToCore("", "power on");
     stringOne = "";
   }
   else if (stringOne.substring(0, 9) == "power off" || stringOne.substring(0, 9) == "power_off" || stringOne.substring(0, 8) == "poweroff")
   { //analogicznie do włącz
     digitalWrite(POWER_LED_PIN, LOW);
     digitalWrite(POWER_PIN, LOW);
-    AnswerToCore("","power off");
+    AnswerToCore("", "power off");
     stringOne = "";
   }
   else if (stringOne.substring(0, 7) == "info on" || stringOne.substring(0, 7) == "info_on" || stringOne.substring(0, 6) == "infoon")
   { //pokazuj stan wszystkiego co się dzieje na procku (wyrzucaj info na port). włączamy do prac serwisowych. włączenie gry automatycznie wyłączy.
     b_show_info = true;
     b_znaki_koncow_linii = false; //usuwaj znaki początku i końca linii w wiadomościach do core
-    AnswerToCore("","info on");
+    AnswerToCore("", "info on");
     stringOne = "";
   }
   else if (stringOne.substring(0, 8) == "info off" || stringOne.substring(0, 8) == "info_off" || stringOne.substring(0, 7) == "infooff")
   { //wyłącz info- analogicznie do tego powyżej. arduino jest po starcie na "info off"
     b_show_info = false;
     b_znaki_koncow_linii = true; //pokazuj znaki początku i końca linii w wiadomościach do core
-    AnswerToCore("","info off");
+    AnswerToCore("", "info off");
     stringOne = "";
   }
 
@@ -450,7 +473,7 @@ void loop() //wieczna główna pętla programu
       {
         b_up = true;
         z = 230; //jedna z 2 możliwych 'z' możliwych docelowo do osiągnięcia w programie (inne są zbędne)
-        n_servo_speed = 2; //predkosc serw podczas podnoszenia od planszy
+        n_servo_speed = n_servo_speed_updown; //predkosc serw podczas podnoszenia od planszy
         if (b_show_info == true)
         {
           Serial.print("up: ");
@@ -462,7 +485,7 @@ void loop() //wieczna główna pętla programu
       {
         b_down = true;
         z = 158; //jw. w 'up'
-        n_servo_speed = 2; //predkosc serw podczas opadania ku planszy
+        n_servo_speed = n_servo_speed_updown; //predkosc serw podczas opadania ku planszy
         if (b_show_info == true)
         {
           Serial.println("down: ");
@@ -529,8 +552,8 @@ void loop() //wieczna główna pętla programu
       }
       //pre_beta_rad = (a*a + b*b - L*L) / (2*a*b); /*obliczanie bety w radianach bez acos*/ //Serial.print("pre_beta_rad= "); Serial.println(pre_beta_rad);
       beta_rad = acos((a * a + b * b - L * L) / (2 * a * b)); /*obliczanie bety w radianach*/ //Serial.print("beta_rad= "); Serial.println(beta_rad);
-      beta = (180 / PI) * beta_rad; /*kąt beta docelowy.*/ 
-      if (b_show_info == true) 
+      beta = (180 / PI) * beta_rad; /*kąt beta docelowy.*/
+      if (b_show_info == true)
       {
         Serial.print(", beta= ");
         Serial.print(beta);
@@ -613,13 +636,14 @@ void loop() //wieczna główna pętla programu
         servoA.write(110, n_servo_speed, false); PrintAngleToLCD("servoA"); //... to serwem podstawy ustaw się na środku planszy ...
         b_sekwencja_ruchow = false; //... i nie wykonuj już więcej funkcji związanym z grą na stronie WWW...
       }
-       //... a na końcu wyślij do core informację o tym jaki żądany ruch z core'a został wykonany:
+      //... a na końcu wyślij do core informację o tym jaki żądany ruch z core'a został wykonany:
       // jeżeli żądanie ruchu zawierało pole nad które miała się łapa ruszyć, to do informacji zwrotnej dopisz też informację o tym jakie to było pole (zbędna ochrona)...
-      if (Str_move_case == "movedFrom" || Str_move_case == "movedTo" || Str_move_case == "movedToR") {
+      if (Str_move_case.substring(0, 5) == "moved") //(Str_move_case == "movedFrom" || Str_move_case == "movedTo" || Str_move_case == "movedToR")
+      {
         String Str_sqare = " " + (String)Str_litera_pola + (String)n_wsp_n;
-        AnswerToCore(Str_move_case,Str_sqare);
+        AnswerToCore(Str_move_case, Str_sqare);
       }
-      else AnswerToCore(Str_move_case,""); //...a dla innych ruchów wyślij samą odpowiedź o wykonanym ruchu.
+      else AnswerToCore(Str_move_case, ""); //...a dla innych ruchów wyślij samą odpowiedź o wykonanym ruchu.
       // !!w rdzeniu (core) mam stare ustawienia wg których każda wiadomość kończy się dolarem. zobaczyć czy to coś psuje (nie widać by coś się złego działo).
     }
     stringOne = ""; //po przejściu przez cały program wyczyść tą zmienną, by w kolejnym przejściu nie został uruchomiony któryś warunek.
@@ -723,7 +747,7 @@ void PrintPosToLCD(String Str_pos, int n_axis_pos)
   lcd2.setCursor(n_row + 2, 0);
   if (n_axis_pos == -1) lcd2.print("???"); //jeżeli pozycja nie jest znana, bo nie jest liczona (np. podczas podawania kąta bezpośrednio na serwo), to wyświetlaj "???"
   else if (n_axis_pos >= 100) lcd2.print(n_axis_pos);
-  else 
+  else
   {
     lcd2.print("0");
     lcd2.setCursor(n_row + 3, 0);
