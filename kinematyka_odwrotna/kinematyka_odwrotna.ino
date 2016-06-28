@@ -1,7 +1,9 @@
+//-------------------------------------------------------------INCLUDES-------------------------------------------------------------//
 #include <VarSpeedServo.h> //biblioteka odpowiedzialna za powolny ruch serw (nowa funkcja write() )
 //dokonać odpowiednich konwersji. albo wyrzucić całą matematykę poza arduino do Qt
 #include <math.h> //cosinusy, PI itd
 #include <LiquidCrystal.h> //panele lcd
+#include "Arduino.h"
 
 LiquidCrystal lcd1(32, 30, 28, 26, 24, 22);
 LiquidCrystal lcd2(33, 31, 29, 27, 25, 23);
@@ -15,6 +17,7 @@ bool b_power_state; //do sprawdznia czy zasilacz jest włączony
 VarSpeedServo servoA, servoB, servoC, servoD, servoE, servoF; //definicja serw wg specjalnej biblioteki
 double alpha_rad, beta_rad; //kąty serw B i C w radianach
 double fi1, fi2, fi3, fi_rad; //skomplikowane liczenie kąta fi w kilku krokach
+int n_fi_poprawka = -1;
 float f_katPodstawa; //kąt podstawy- serwo podstawy. jako float
 int n_katPodstawa = 90; int n_katSzczeki = 90; //kąty podstawy i szczęk jako integery. na starcie zdefiniowane na 90 stopni (środek zakresu pracy serwa)
 double alpha = 90, beta = 90, fi = 90, fi_temp = fi, fi_last = fi; // kąty serw przy ładowaniu programu. jw.
@@ -29,13 +32,13 @@ unsigned long y = 0, z; //skladowe punktu P(y,z) jako ogromne liczby. najważnie
 //liczone od podstawy ramienia). nie sprawdziłem tych wartości przy liczeniu kinematyki odwrotnej i odbiegają one o jakieś 10% od tego co się da obliczyć linijką. dlatego później w
 //programie występują zmienne typu: d_kp_y, d_kp_x, d_b, d_c (oraz cały blok zmiennych potrzebnych do liczenia ich) na podstawie których liczony jest kąt podstawy i jest komparacja
 //położenia pól planszy szachownicy w stosunku do punktu P(y,z) liczonego na współczynnikach.
-double d_y_part = 0, d_z_part = 0; //zwiększane kawałki od aktualnego punktu P do nowopodanego punktu P (w iteracjach)
-double d_y_temp = 0, d_z_temp = 0; //tymczasowy y,z do obliczen (używane przy d_y_part, d_z_part)
-unsigned long n_y_temp, n_z_temp; //integery tempów do obliczeń (używane przy d_y_part, d_z_part)
-String stringOne, Str_y, Str_z, Str_katSzczeki, Str_katPodstawy, Str_fi, Str_alpha, Str_beta, Str_servo_speed; //, readString; <- nie wiem czemu myślałem że zmienna readString jest
-//potrzebna (świeciło się ładnie na pomarańczowo i było użyte w jakimś przykładzie na niesie. na wszelki wypadek zostawiam to tutaj). stringOne - jedna z ważniejszych zmiennych.
+double d_y_part = 0, d_z_part = 0, d_kp_part = 0; //zwiększane kawałki od aktualnego punktu P do nowopodanego punktu P (w iteracjach)
+double d_y_temp = 0, d_z_temp = 0, d_kp_temp = 0; //tymczasowy y,z,kp do obliczen (używane przy d_y_part, d_z_part, d_kp_part)
+unsigned long n_y_temp, n_z_temp, n_kp_temp; //integery tempów do obliczeń (używane przy d_y_part, d_z_part)
+String coreCommand, Str_y, Str_z, Str_katSzczeki, Str_katPodstawa, Str_fi, Str_alpha, Str_beta, Str_servo_speed; //, readString; <- nie wiem czemu myślałem że zmienna readString jest
+//potrzebna (świeciło się ładnie na pomarańczowo i było użyte w jakimś przykładzie na niesie. na wszelki wypadek zostawiam to tutaj). coreCommand - jedna z ważniejszych zmiennych.
 //zapisywane jest w niej to co przyjdzie po USB i program działa w opraciu o to co w niej jest. można zmienić tą nazwę bo w sumie głupia jest (użyta z przykładu z neta i tak zostało).
-//reszta zmiennych to po prostu Stringi potrzebne przy konwersji z stringOne na wartości liczbowe (i tyczą się one wartości y,z ważnych do liczenia punktu P na płaszczyźnie (y,z).
+//reszta zmiennych to po prostu Stringi potrzebne przy konwersji z coreCommand na wartości liczbowe (i tyczą się one wartości y,z ważnych do liczenia punktu P na płaszczyźnie (y,z).
 double pre_alpha1_rad, pre_alpha2_rad, pre_beta_rad; //pomocnicze przy liczeniu kątów serw (problem z zasięgiem zmiennych)
 bool b_up = false; bool b_down = false; //zmienne informują czy w danych ruchu ramienia było ono podnoszone, czy opuszczane (ważne dla prostowania serwa kąta fi, by nic nie wywrócić).
 int n_servo_speed = 18; //predkosc dla serw podczas wstepnego ustawiania. wartość wykładnicza. im wyższe wartości tym szybciej chodzi (max działający = bodajże 127).
@@ -83,6 +86,7 @@ double d_c_array[] = {107.4, 107.8, 108.2, 108.6, 109.0, 109.4, 109.8, 110.2, 79
                       -62.9, -63.3, -88.5, -89.0, -89.6, -90.1, -90.6, -91.1, -91.7, -92.2
                      };
 
+//-------------------------------------------------------------SETUP-------------------------------------------------------------//
 void setup() //kod kóry wykona się raz
 {
   pinMode(SERVO_POWER_PIN1, OUTPUT); //ustawianie tego pinu jako wyjście, tj. będziemy tu czymś sterować. pin włącza przekaźnikiem zasilanie na serva
@@ -103,88 +107,37 @@ void setup() //kod kóry wykona się raz
 
   servoA.attach(2); servoB.attach(3); servoC.attach(4); servoD.attach(5); servoE.attach(6); servoF.attach(7); //podpinanie serwomechanizmów to tych pinów. piny muszą być PWN
   servoA.write(n_katPodstawa, n_servo_speed, false); servoB.write(alpha, n_servo_speed, false); servoC.write(beta, n_servo_speed, false); //ustawienie wstępnej pozycji serw by w razie...
-  servoD.write(fi + 7, n_servo_speed, false); servoE.write(n_katSzczeki, n_servo_speed, false); servoF.write(n_wsp_ks2 - n_katSzczeki, n_servo_speed, false); //...awarii kodu łapa nie runęła na szachy
+  servoD.write(fi + n_fi_poprawka, n_servo_speed, false); servoE.write(n_katSzczeki, n_servo_speed, false); servoF.write(n_wsp_ks2 - n_katSzczeki, n_servo_speed, false); //...awarii kodu łapa nie runęła na szachy
   PrintAngleToLCD("servoA"); PrintAngleToLCD("servoB"); PrintAngleToLCD("servoC"); PrintAngleToLCD("servoD"); PrintAngleToLCD("servoE"); PrintAngleToLCD("servoF");
-  stringOne = "(184,296)"; //ustawienie dla pierwszego uruchomienia łapy. dla tego punktu P(y,z) wszystkie ważne serwa powinny mieć ustawione 90 stopni po przejściu przez kod
+  coreCommand = "(184,296)"; //ustawienie dla pierwszego uruchomienia łapy. dla tego punktu P(y,z) wszystkie ważne serwa powinny mieć ustawione 90 stopni po przejściu przez kod
   Serial.begin(9600); //rozpocznij komunikację po usb z prędkośćią 9600 bitów/s
 }
 
+//-------------------------------------------------------------MAIN-------------------------------------------------------------//
 void loop() //wieczna główna pętla programu
 {
   while (Serial.available()) //gdy pojawi się na porcie jakaś wiadomość...
   {
-    stringOne = Serial.readString(); //... zapisz ją w tej zmiennej.
+    coreCommand = Serial.readString(); //... zapisz ją w tej zmiennej.
   }
 
-  //poniżej ogromne wielokrotnie zagnieżdżone funkcje warunkowe IF sprawdzające co przyszło w zmiennej stringOne...
-  if (stringOne.substring(3, 5) == "]f") //jeżeli wiadomość to np. [a2]f to arduino rozpoczyna wymianę danych z core'm
-  { //wiadomość oznacza żądanie przeniesienia pionka "z pozycji (f-from)". w tym ruchu ustawiane jest ramie w pukncie P nad pionkiem do podniesienia.
-    b_show_info = false; //na wszelki wypadek wyłącz pokazywanie innych informacji (rozwaliły by komunikację)
-    b_sekwencja_ruchow = true; //rozpoczęto rozmowe z core'm, więc niektóre ruchy wykonywać mają się trochę inaczej
-    if (stringOne.substring(5, 6) == "c") Str_move_case = "movedFromC";
-    else if (stringOne.substring(5, 6) == "w") Str_move_case = "movedFromW";
-    else Str_move_case = "movedFrom"; //zostaje ustawiona zmienna, która po wykonaniu ruchu przez łapę zostanie wysłana core, jako potwierdzenie tego co miało się wykonać (i czekanie na...
-    //...kolejny sygnał z sekwencji ruchów
-  }
-  //open1 przechwytywane w substringu "open" //pierwsze otworzenie szczęk ramienia...
-  else if (stringOne.substring(0, 5) == "down1") Str_move_case = "armDown1"; //...pierwsze zejście ramienia na dół...
-  //close1 przechwytywane w substringu "close" //...pierwsze zamknięcie szczęk ramienia na bierce...
-  else if (stringOne.substring(0, 3) == "up1") Str_move_case = "armUp1"; //...pierwsze uniesienie ramienia ku górze...
-  else if (stringOne.substring(3, 5) == "]t")
-  {
-    if (stringOne.substring(5, 6) == "c") Str_move_case = "movedToC";
-    else if (stringOne.substring(5, 6) == "w") Str_move_case = "movedToW";
-    else Str_move_case = "movedTo"; //...przeniesienie łapy nad pole planszy na którym przechwycona bierka ma wylądować...
-  }
-  else if (stringOne.substring(0, 5) == "down2") Str_move_case = "armDown2"; //...drugie zejście na dół (na pole docelowe)...
-  //open2 przechwytywane w substringu "open" //...drugie otwarcie szczęk ramienia...
-  else if (stringOne.substring(0, 3) == "up2") Str_move_case = "armUp2"; //...odjechanie na górę i koniec. czekanie na kolejne komendy.
-
-  //usuwanie pionków z planszy:
-  else if (stringOne.substring(3, 5) == "]r") //sekwencja poprzedza zwykłe przemieszczanie bierki. ma to miejsce, gdy bierka ma wylądować na polu na którym jest bierka wroga.
-  { //o tym czy na bitym polu na pewno jest bierka wroga decyduje program szachowy, który przed ruchami arduino bada czy ruch może być wykonany.
-    b_show_info = false;
-    b_sekwencja_ruchow = true;
-    Str_move_case = "movedToR";
-  }
-  //openR1 przechwytywane w substringu "open"
-  else if (stringOne.substring(0, 5) == "downR") Str_move_case = "downR";
-  //closeR przechwytywane w substringu "close"
-  else if (stringOne.substring(0, 3) == "upR") Str_move_case = "armUpR";
-  else if (stringOne.substring(0, 6) == "trashR")
-  {
-    n_katPodstawa = 165; //ustaw podstawe nad pundełkiem na zbite bierki...
-    servoA.write(n_katPodstawa, n_servo_speed, false); PrintAngleToLCD("servoA"); PrintPosToLCD("x", -1);
-    stringOne = "(170,240)"; //...i wyceluj tam na płaszczyźnie (y,z).
-    Str_move_case = "trashedR";
-  }
-  //openR2 przechwytywane w substringu "open"
-
-  //warunki roszady:
-  else if (stringOne.substring(0, 4) == "upC1") Str_move_case = "armUpC1";
-  else if (stringOne.substring(0, 4) == "upC2") Str_move_case = "armUpC2";
-  else if (stringOne.substring(0, 4) == "upC3") Str_move_case = "armUpC3";
-  else if (stringOne.substring(0, 4) == "upC4") Str_move_case = "armUpC4";
-  else if (stringOne.substring(0, 6) == "downC1") Str_move_case = "armDownC1";
-  else if (stringOne.substring(0, 6) == "downC2") Str_move_case = "armDownC2";
-  else if (stringOne.substring(0, 6) == "downC3") Str_move_case = "armDownC3";
-  else if (stringOne.substring(0, 6) == "downC4") Str_move_case = "armDownC4";
-
+  PrepareAnswer();
+  
   //w powyższym warunku głównie była zmieniana wartość zmiennej Str_move_case. tutaj jest wykonywana reszta/większa część ruchów, gdzie np. wartość up2 wpada do warunku wyżej i tu.
-  if (stringOne.substring(0, 5) == "reset") //funckja serwisowa. ustawia serwa na pozycję startową
+  if (coreCommand.substring(0, 5) == "reset") //funckja serwisowa. ustawia serwa na pozycję startową
   {
     AnswerToCore("", "Reset: kat szczeki = 90, kat podstawy = 90");
     y = b; z = z1 + a; PrintPosToLCD("y", y); PrintPosToLCD("z", z); //ustawienia wynikajace z katow = 90
-    stringOne = "(184,296)"; //to samo co wyzej
+    coreCommand = "(184,296)"; //to samo co wyzej
     n_katSzczeki = 90; n_katPodstawa = 90;
     servoA.write(n_katPodstawa, n_servo_speed, false); PrintAngleToLCD("servoA"); PrintPosToLCD("x", -1);
     servoE.write(n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoE");
     servoF.write(n_wsp_ks2 - n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoF");
   }
-  else if (stringOne.substring(0, 7) == "speed =") //funckja serwisowa. ustawia prędkość przemieszczania się ramienia (bez up/down)
+  else if (coreCommand.substring(0, 7) == "speed =") //funckja serwisowa. ustawia prędkość przemieszczania się ramienia (bez up/down)
   {
 
-    Str_servo_speed = stringOne.substring(8);
+    Str_servo_speed = coreCommand.substring(8);
     if (Str_servo_speed.toInt() <= 255 && Str_servo_speed.toInt() >= 1) //z tego co wiem wartości powyżej 127 są takie same, albo nie widać różnicy. w każdym razie przyjmie max 255.
     {
       n_servo_speed = Str_servo_speed.toInt();
@@ -192,11 +145,11 @@ void loop() //wieczna główna pętla programu
       Serial.print("servo speed = "); Serial.println(n_servo_speed);
     }
     else Serial.println(" servo_speed podany poza zakresem <1,255>");
-    stringOne = ""; //prewencyjnie czyść tą zmienną. jest ona też czyszczona na końcu. bez tego arduino się zatnie wykonując w kółko to samo.
+    coreCommand = ""; //prewencyjnie czyść tą zmienną. jest ona też czyszczona na końcu. bez tego arduino się zatnie wykonując w kółko to samo.
   }
-  else if (stringOne.substring(0, 7) == "alpha =") //funckja serwisowa. ustaw kąt silnika B (alfa)
+  else if (coreCommand.substring(0, 7) == "alpha =") //funckja serwisowa. ustaw kąt silnika B (alfa)
   {
-    Str_alpha = stringOne.substring(8);
+    Str_alpha = coreCommand.substring(8);
     alpha = Str_alpha.toInt();
     if (alpha <= 180 && alpha >= 0)
     {
@@ -208,11 +161,11 @@ void loop() //wieczna główna pętla programu
       Serial.println(alpha);
     }
     else Serial.println("alpha podany poza zakresem <0,180>");
-    stringOne = "";
+    coreCommand = "";
   }
-  else if (stringOne.substring(0, 6) == "beta =") //funckja serwisowa. ustaw kąt silnika C (beta)
+  else if (coreCommand.substring(0, 6) == "beta =") //funckja serwisowa. ustaw kąt silnika C (beta)
   {
-    Str_beta = stringOne.substring(7);
+    Str_beta = coreCommand.substring(7);
     beta = Str_beta.toInt();
     if (beta <= 157 && beta >= 24) //servo beta dziala w przedziale do 157 stopni
     {
@@ -224,11 +177,11 @@ void loop() //wieczna główna pętla programu
       Serial.println(beta);
     }
     else Serial.println("beta podana poza zakresem <23,157>"); //nienajlepsze serwo powoduje wąski przedział działających wartości
-    stringOne = "";
+    coreCommand = "";
   }
-  else if (stringOne.substring(0, 4) == "ks =") //funckja serwisowa. ustaw kąt silnika E i F (szczęk)
+  else if (coreCommand.substring(0, 4) == "ks =") //funckja serwisowa. ustaw kąt silnika E i F (szczęk)
   {
-    Str_katSzczeki = stringOne.substring(5);
+    Str_katSzczeki = coreCommand.substring(5);
     n_katSzczeki = Str_katSzczeki.toInt();
     if (n_katSzczeki >= 82 && n_katSzczeki <= 131) //nie potrzeba by działało dla szerszych wartości
     {
@@ -237,13 +190,13 @@ void loop() //wieczna główna pętla programu
       Serial.print("kat szczeki = "); Serial.println(n_katSzczeki);
     }
     else Serial.println("katSzczeki podany poza zakresem <82,131>");
-    stringOne = "";
+    coreCommand = "";
   }
-  else if (stringOne.substring(0, 4) == "kp =") //funckja serwisowa. ustaw kąt silnika A (podstawy)
+  else if (coreCommand.substring(0, 4) == "kp =") //funckja serwisowa. ustaw kąt silnika A (podstawy)
   {
-    Str_katPodstawy = stringOne.substring(5);
-    n_katPodstawa = Str_katPodstawy.toInt();
-    if (n_katPodstawa >= 15 && n_katPodstawa <= 165)
+    Str_katPodstawa = coreCommand.substring(5);
+    n_katPodstawa = Str_katPodstawa.toInt();
+    if (n_katPodstawa >= 15 && n_katPodstawa <= 175)
     {
       servoA.write(n_katPodstawa, n_servo_speed, false);
       PrintAngleToLCD("servoA");
@@ -254,57 +207,31 @@ void loop() //wieczna główna pętla programu
       Serial.println(n_katPodstawa);
     }
     else Serial.println("kat podstawy podany poza zakresem <15,165>"); //poza zakresem tym nie bardzo reagowało serwo
-    stringOne = "";
+    coreCommand = "";
   }
-  else if (stringOne.substring(0, 4) == "fi =") //funckja serwisowa. ustaw kąt silnika D (fi)
+  else if (coreCommand.substring(0, 4) == "fi =") //funckja serwisowa. ustaw kąt silnika D (fi)
   {
-    Str_fi = stringOne.substring(5);
+    Str_fi = coreCommand.substring(5);
     fi = Str_fi.toInt();
     if (fi >= 45 && fi <= 180) {
       servoD.write(fi, n_servo_speed, false);
       PrintAngleToLCD("servoD");
       Serial.print("fi = ");
       Serial.println(fi);
-      Serial.print("Brak poprawki fi o +7");
+      Serial.print("Brak poprawki fi");
     }
     else Serial.println("fi podany poza zakresem <45,180>");
-    stringOne = "";
+    coreCommand = "";
   }
-  else if (stringOne.substring(0, 4) == "open") //otwieranie szczęk w celu odłożenia bierki na planszy, albo zejścia po nią
+  else if (coreCommand.substring(2, 6) == "open") //otwieranie szczęk w celu odłożenia bierki na planszy, albo zejścia po nią
   {
-    n_katSzczeki = 102;
-    servoE.write(n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoE");
-    servoF.write(n_wsp_ks2 - n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoF");
-    if (b_show_info == true) {
-      Serial.print("opened. katSzczeki = ");
-      Serial.println(n_katSzczeki);
-    }
-    //poniżej warunki gdy jest wykonywany oficjalny ruch bierki podczas rozgrywki
-    if (stringOne.substring(0, 5) == "open1" && b_sekwencja_ruchow == true) AnswerToCore("", "opened1"); //nie wiem czy te prinln nie powinny być na samym końcu pętli. póki co działa.
-    else if (stringOne.substring(0, 5) == "open2" && b_sekwencja_ruchow == true) AnswerToCore("", "opened2");
-    else if (stringOne.substring(0, 6) == "openR1" && b_sekwencja_ruchow == true) AnswerToCore("", "openedR1");
-    else if (stringOne.substring(0, 6) == "openR2" && b_sekwencja_ruchow == true) AnswerToCore("", "openedR2");
-    else if (stringOne.substring(0, 6) == "openC1" && b_sekwencja_ruchow == true) AnswerToCore("", "openedC1");
-    else if (stringOne.substring(0, 6) == "openC2" && b_sekwencja_ruchow == true) AnswerToCore("", "openedC2");
-    else if (stringOne.substring(0, 6) == "openC3" && b_sekwencja_ruchow == true) AnswerToCore("", "openedC3");
-    stringOne = "";
+    Open();
   }
-  else if (stringOne.substring(0, 5) == "close") //analogicznie do open
+  else if (coreCommand.substring(2, 7) == "close") //analogicznie do open
   {
-    n_katSzczeki = 85;
-    servoE.write(n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoE");
-    servoF.write(n_wsp_ks2 - n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoF");
-    if (b_show_info == true) {
-      Serial.print("closed. katSzczeki = ");
-      Serial.println(n_katSzczeki);
-    }
-    if (stringOne.substring(0, 6) == "close1" && b_sekwencja_ruchow == true) AnswerToCore("", "closed1");
-    else if (stringOne.substring(0, 6) == "closeR" && b_sekwencja_ruchow == true) AnswerToCore("", "closedR");
-    else if (stringOne.substring(0, 7) == "closeC1" && b_sekwencja_ruchow == true) AnswerToCore("", "closedC1");
-    else if (stringOne.substring(0, 7) == "closeC2" && b_sekwencja_ruchow == true) AnswerToCore("", "closedC2");
-    stringOne = "";
+    Close();
   }
-  else if (stringOne.substring(0, 7) == "turn on" || stringOne.substring(0, 7) == "turn_on" || stringOne.substring(0, 6) == "turnon")
+  else if (coreCommand.substring(0, 7) == "turn on" || coreCommand.substring(0, 7) == "turn_on" || coreCommand.substring(0, 6) == "turnon")
   { //daj zasilanie na serwa...
     b_power_state = digitalRead(POWER_PIN); //(nie używane póki co. nie wiem czy zadziała, bo ten pin był ustawiony bodajże jako ustalający, a nie odczytujący (input/output), chyba że
     //tu jest rozpatrywany inny pin. sprawdzić póxniej)
@@ -315,67 +242,70 @@ void loop() //wieczna główna pętla programu
       AnswerToCore("", "turn on servo power");
     }
     else AnswerToCore("", "ERROR: power supply is turned off.");
-    stringOne = "";
+    coreCommand = "";
   }
-  else if (stringOne.substring(0, 8) == "turn off" || stringOne.substring(0, 8) == "turn_off" || stringOne.substring(0, 7) == "turnoff")
+  else if (coreCommand.substring(0, 8) == "turn off" || coreCommand.substring(0, 8) == "turn_off" || coreCommand.substring(0, 7) == "turnoff")
   { //wyłączenie serw. jeżeli nie jest łapa dobrze oparta, to runie ona o podłoże. wprowadzić funkcję auto podpierania przed wyłączeniem.
     digitalWrite(SERVO_POWER_PIN1, HIGH);
     digitalWrite(SERVO_POWER_PIN2, HIGH);
     AnswerToCore("", "turn off servo power");
-    stringOne = "";
+    coreCommand = "";
   }
-  else if (stringOne.substring(0, 8) == "power on" || stringOne.substring(0, 8) == "power_on" || stringOne.substring(0, 7) == "poweron")
+  else if (coreCommand.substring(0, 8) == "power on" || coreCommand.substring(0, 8) == "power_on" || coreCommand.substring(0, 7) == "poweron")
   { //włącz zasilacz (jeżeli nie jest włączony ręcznie)
     digitalWrite(POWER_LED_PIN, HIGH);
     digitalWrite(POWER_PIN, HIGH);
     AnswerToCore("", "power on");
-    stringOne = "";
+    coreCommand = "";
   }
-  else if (stringOne.substring(0, 9) == "power off" || stringOne.substring(0, 9) == "power_off" || stringOne.substring(0, 8) == "poweroff")
+  else if (coreCommand.substring(0, 9) == "power off" || coreCommand.substring(0, 9) == "power_off" || coreCommand.substring(0, 8) == "poweroff")
   { //analogicznie do włącz
     digitalWrite(POWER_LED_PIN, LOW);
     digitalWrite(POWER_PIN, LOW);
     AnswerToCore("", "power off");
-    stringOne = "";
+    coreCommand = "";
   }
-  else if (stringOne.substring(0, 7) == "info on" || stringOne.substring(0, 7) == "info_on" || stringOne.substring(0, 6) == "infoon")
+  else if (coreCommand.substring(0, 7) == "info on" || coreCommand.substring(0, 7) == "info_on" || coreCommand.substring(0, 6) == "infoon")
   { //pokazuj stan wszystkiego co się dzieje na procku (wyrzucaj info na port). włączamy do prac serwisowych. włączenie gry automatycznie wyłączy.
     b_show_info = true;
     b_znaki_koncow_linii = false; //usuwaj znaki początku i końca linii w wiadomościach do core
     AnswerToCore("", "info on");
-    stringOne = "";
+    coreCommand = "";
   }
-  else if (stringOne.substring(0, 8) == "info off" || stringOne.substring(0, 8) == "info_off" || stringOne.substring(0, 7) == "infooff")
+  else if (coreCommand.substring(0, 8) == "info off" || coreCommand.substring(0, 8) == "info_off" || coreCommand.substring(0, 7) == "infooff")
   { //wyłącz info- analogicznie do tego powyżej. arduino jest po starcie na "info off"
     b_show_info = false;
     b_znaki_koncow_linii = true; //pokazuj znaki początku i końca linii w wiadomościach do core
     AnswerToCore("", "info off");
-    stringOne = "";
+    coreCommand = "";
   }
 
-  //poniżej ogromny blok funkcji dla takich wartości stringOne, które powodują ruch ramienia w wielu przejściach/iteracjach/mini-ruchach
-  else if (stringOne.substring(0, 1) == "(" || stringOne.substring(0, 1) == "[" ||
-           stringOne.substring(0, 2) == "up" || stringOne.substring(0, 4) == "down")
+  //poniżej ogromny blok funkcji dla takich wartości coreCommand, które powodują ruch ramienia w wielu przejściach/iteracjach/mini-ruchach
+  else if (coreCommand.substring(0, 1) == "(" || coreCommand.substring(2, 3) == "[" ||
+           coreCommand.substring(2, 4) == "up" || coreCommand.substring(2, 6) == "down")
   {
-    if (stringOne.substring(0, 1) == "(" || stringOne.substring(0, 1) == "[")
+    if (coreCommand.substring(0, 1) == "(" || coreCommand.substring(2, 3) == "[")
     {
-      if (stringOne.substring(0, 1) == "(") //funkcja serwisowa. warunek czyta wartość 'y', 'z' dla wartości stringOne z formatu: '(yyy,zzz)' oraz '(yyy,zzz,A1)'.
+      if (coreCommand.substring(0, 1) == "(") //funkcja serwisowa. warunek czyta wartość 'y', 'z' dla wartości coreCommand z formatu: '(yyy,zzz)' oraz '(yyy,zzz,A1)'.
       {
-        Str_y = stringOne.substring(1, 4); // y
-        Str_z = stringOne.substring(5, 8); // z
+        Str_y = coreCommand.substring(1, 4); // y
+        Str_z = coreCommand.substring(5, 8); // z
         n_y = Str_y.toInt(); n_z = Str_z.toInt(); //zmień odczytany string na int...
         y = n_y; z = n_z; //...a teraz zmień odczyt na unsigned long
         if (z < 150) z = 150;
       }
-      if (stringOne.substring(11, 12) == ")" || stringOne.substring(3, 4) == "]") //wartośc z nawiasem okrągłym serwisowa, z kwadratowym służaca do obsługi gry.
-      { //warunek czyta wartość pola na planszy dla wartości stringOne z formatu: '(yyy,zzz,A1)' lub '[a1]'.
+      if (coreCommand.substring(11, 12) == ")" || coreCommand.substring(5, 6) == "]") //wartośc z nawiasem okrągłym serwisowa, z kwadratowym służaca do obsługi gry.
+      { //warunek czyta wartość pola na planszy dla wartości coreCommand z formatu: '(yyy,zzz,A1)' lub '[a1]'.
         if (b_show_info == true) Serial.println("Chess square statement met");
-        if (stringOne.substring(11, 12) == ")") Str_litera_pola = stringOne.substring(9, 10); //sprawdź jaka podana jest litera pola dla funkcji serwisowych...
-        else if (stringOne.substring(3, 4) == "]") Str_litera_pola = stringOne.substring(1, 2); //... i funkcji obsługi gry.
-        if (b_show_info == true) {
+        if (coreCommand.substring(11, 12) == ")") Str_litera_pola = coreCommand.substring(9, 10); //sprawdź jaka podana jest litera pola dla funkcji serwisowych...
+        else if (coreCommand.substring(5, 6) == "]") Str_litera_pola = coreCommand.substring(3, 4); //... i funkcji obsługi gry.
+        else Serial.print("error1");
+        if (b_show_info == true) 
+        {
           Serial.print("litera pola = ");
           Serial.println(Str_litera_pola);
         }
+        
         if (Str_litera_pola == "a" || Str_litera_pola == "A") {
           n_wsp_m = 3;  //zamień tą literę na współczynnik n_wsp_m (jego wartośc jest ważna dla obliczeń)...
           Str_litera_pola = "a";
@@ -409,26 +339,33 @@ void loop() //wieczna główna pętla programu
           Str_litera_pola = "h";
         }
         else Serial.println("ERROR: Złe podane pole planszy.");
-        if (b_show_info == true) {
+        
+        if (b_show_info == true) 
+        {
           Serial.print("m = ");
           Serial.println(n_wsp_m);
         }
-        if (stringOne.substring(11, 12) == ")") Str_cyfra_pola = stringOne.substring(10, 11); //sprawdź jaka podana jest cyfra pola dla funkcji serwisowych...
-        else if (stringOne.substring(3, 4) == "]") Str_cyfra_pola = stringOne.substring(2, 3); //...i dla funkcji obsługi gry.
+        
+        if (coreCommand.substring(11, 12) == ")") Str_cyfra_pola = coreCommand.substring(10, 11); //sprawdź jaka podana jest cyfra pola dla funkcji serwisowych...
+        else if (coreCommand.substring(5, 6) == "]") Str_cyfra_pola = coreCommand.substring(4, 5); //...i dla funkcji obsługi gry.
+        else Serial.print("error2");
         n_wsp_n = Str_cyfra_pola.toInt(); //bezpośrednie przypisanie
-        if (b_show_info == true) {
+        if (b_show_info == true) 
+        {
           Serial.print("n = ");
           Serial.println(n_wsp_n);
         }
         d_kp_y = f_y0 + (f_dl_pola * n_wsp_n); //z rzeczywistych zależności oblicz składową 'y' dla obliczenia kąta podstawy
-        if (b_show_info == true) {
+        if (b_show_info == true) 
+        {
           Serial.print("y_kp = ");
           Serial.println(d_kp_y);
         }
         if (n_wsp_m >= 0) //dla pól A,B,C,D
         {
           d_kp_x = f_dl_pola * n_wsp_m + (f_blad_srodka + f_dl_pola / 2); PrintPosToLCD("x", d_kp_x); //oblicz z rzeczywistych zależności składową 'x' dla obliczenia kąta podstawy
-          if (b_show_info == true) {
+          if (b_show_info == true) 
+          {
             Serial.print("x = ");
             Serial.println(d_kp_x);
           }
@@ -438,19 +375,16 @@ void loop() //wieczna główna pętla programu
         else //dla pól E,F,G,H
         { //wzory są tutaj trochę inne, bo są "z drugiej strony planszy". na inne wzory wpływa też zasięg kątów w tangensie
           d_kp_x  = f_dl_pola * (-n_wsp_m - 1) + f_dl_pola / 2 - f_blad_srodka; PrintPosToLCD("x", d_kp_x);
-          if (b_show_info == true) {
+          if (b_show_info == true) 
+          {
             Serial.print("x = ");
             Serial.println(d_kp_x);
           }
           f_katPodstawa = 180 - ((180 / PI) * atan(d_kp_y / d_kp_x));
           n_katPodstawa = round(f_katPodstawa);
         }
-        servoA.write(n_katPodstawa, n_servo_speed, false); PrintAngleToLCD("servoA"); //obliczony kąt podstawy w końcu jest ustawiany nań
-        if (b_show_info == true) {
-          Serial.print("kp = ");
-          Serial.println(n_katPodstawa);
-        }
-        if (stringOne.substring(0, 1) == "[") //mamy składową osi 'x' (z 'kp'). wartość osi 'z' wynika tylko z funkcji up/down. zostaje tutaj wyliczenie składowej ostatniej osi 'y'.
+
+        if (coreCommand.substring(2, 3) == "[") //mamy składową osi 'x' (z 'kp'). wartość osi 'z' wynika tylko z funkcji up/down. zostaje tutaj wyliczenie składowej ostatniej osi 'y'.
         {
           //współczynniki do poniższego wzoru obliczone podobnie jak te przy wzorze na 'kp'. najpierw trzeba było znaleść wzór określający wszsytkie środki pól na planszy...
           //...,współczynniki znalezione w matlabie metodami SI za pomocą 4 skrajnych pól planszy. obliczone wzory wrzucone do 2 wektorów opisujących wszsytkie środki pół planszy.
@@ -458,7 +392,8 @@ void loop() //wieczna główna pętla programu
           d_b = d_b_array[((-n_wsp_m + 3) * 8) + n_wsp_n - 1]; //składowa pionowa
           d_c = d_c_array[((-n_wsp_m + 3) * 8) + n_wsp_n - 1]; //składowa pozioma
           y = sqrt(d_b * d_b + d_c * d_c); //wartość której szukamy- przekątna dwóch składowych powyżej
-          if (b_show_info == true) {
+          if (b_show_info == true) 
+          {
             Serial.print("y [mm] = ");  //pokaż obliczoną odległość y
             Serial.println(y);
           }
@@ -469,87 +404,93 @@ void loop() //wieczna główna pętla programu
     {
       if (y == 0) y = b; //jeżeli po odpaleniu ramienia nie była wprowadzona żadna wartość y, to ustaw domyślną. to jest ważne gdy po odpaleniu ramienia pierwszą rzeczą jaką...
       //...chcemy zrobić to podnieśc lub opóścić ramię, a nie ma jeszcze w programie wgranej żadnej wartości dla 'y'.
-      if (stringOne.substring(0, 2) == "up") //jeżeli nie są przeprowadzane żadne ruchy po polach, to wpadamy do funkcji up/down. one też działają na ruch iteracyjnie
+      if (coreCommand.substring(2, 4) == "up") //jeżeli nie są przeprowadzane żadne ruchy po polach, to wpadamy do funkcji up/down. one też działają na ruch iteracyjnie
       {
-        b_up = true;
-        z = 230; //jedna z 2 możliwych 'z' możliwych docelowo do osiągnięcia w programie (inne są zbędne)
-        n_servo_speed = n_servo_speed_updown; //predkosc serw podczas podnoszenia od planszy
-        if (b_show_info == true)
-        {
-          Serial.print("up: ");
-          Serial.print("y [mm] = "); Serial.print(y);
-          Serial.print(", z [mm] = "); Serial.println(z);
-        }
+        Up();
       }
-      else if (stringOne.substring(0, 4) == "down")
+      else if (coreCommand.substring(2, 6) == "down")
       {
-        b_down = true;
-        z = 158; //jw. w 'up'
-        n_servo_speed = n_servo_speed_updown; //predkosc serw podczas opadania ku planszy
-        if (b_show_info == true)
-        {
-          Serial.println("down: ");
-          Serial.print("y [mm] = "); Serial.print(y);
-          Serial.print(", z [mm] = "); Serial.println(z);
-        }
+        Down();
       }
     }
 
-    if (d_y_temp == 0 || d_z_temp == 0) //dla pierwszego automatycznego ustawienia ramienia nie obliczaj przesuwu od poprzedniego ruchu
+    if (d_y_temp == 0 || d_z_temp == 0 || d_kp_temp == 0) //dla pierwszego automatycznego ustawienia ramienia nie obliczaj przesuwu od poprzedniego ruchu
     { //tempy są zerami jak nie było jeszcze żadnego przejścia przez pętle ruchu, tj. nie ma zapisnego ruchu poprzedniego
-      d_y_temp = y; PrintPosToLCD("y", y); //tempy odpowiadają za pamiętajnie poprzednio osiąganych 'y' i 'z'...
+      d_y_temp = y; PrintPosToLCD("y", y); //tempy odpowiadają za pamiętanie poprzednio osiąganych 'y' i 'z'...
       d_z_temp = z; PrintPosToLCD("z", z); //...dzięki temu program zna drogę ramienia skąd-dokąd
-      b_przerywanie_petli = true; //dzięki temu po złapaniu pozycji pierwszej i zarazem docelowej przy pierwszym ruchu program nie przechodzi bez sensu przez całą pętle ruchu, tylko...
+      d_kp_temp = n_katPodstawa; PrintPosToLCD("kp", n_katPodstawa);
+      b_przerywanie_petli = true; //dzięki tej zmiennej po złapaniu pozycji pierwszej i zarazem docelowej przy pierwszym ruchu program nie przechodzi bez sensu przez całą pętle ruchu, tylko...
       //...przerywa ją po 1 przejściu.
     }
     else //zatem dla każdego normalnego podanego ruchu
     { //oblicz części ruchu do dodawania w pętli ruchu:
-      d_y_part = (y - d_y_temp) / n_wsp_ruchu; // floaty. minusowe wartosci dla zmiennej, jezeli punkt jest "z tyłu" (nowa wartość osi 'y' lub 'z' jest mniejsza od poprzedniej).
+      d_y_part = (y - d_y_temp) / n_wsp_ruchu; // floaty. minusowe wartosci dla zmiennej, jezeli punkt jest "z tyłu" (tzn. nowa wartość osi 'y', 'z', 'kp' jest mniejsza od poprzedniej).
       d_z_part = (z - d_z_temp) / n_wsp_ruchu;
+      d_kp_part = (n_katPodstawa - d_kp_temp) / n_wsp_ruchu;
     }
 
     for (int i = 0; i < n_wsp_ruchu; i++) //wykonuj cząstkowe ruchy "n_wsp_ruchu" razy, aż ruch się wykona, lub do błędnych kątów serw. duży warunek.
     {
-      d_y_temp += d_y_part; //od ostatniej pozycji powoli jedź do nowej podanej
-      d_z_temp += d_z_part; //party (d_y_part, d_z_part) są zerami w ruchu ustawczym (pierwszym)
+      d_y_temp += d_y_part; //od ostatniej pozycji powoli jedź do nowej podanej...
+      d_z_temp += d_z_part;
+      d_kp_temp += d_kp_part; //...Party (d_y_part, d_z_part, d_kp_part) są zerami w ruchu ustawczym (pierwszym)
+
       n_y_temp = (int) d_y_temp; PrintPosToLCD("y", n_y_temp); //do obliczeń potrzebuje integerów
-      n_z_temp = (int) d_z_temp; //PrintPosToLCD w poprawce pionowej
+      n_z_temp = (int) d_z_temp; //PrintPosToLCD w już zawarte poprawce pionowej
+      n_kp_temp = (int) d_kp_temp; //PrintPosToLCD("kp", n_y_temp); !!! tu ppwinno być przeliczanie na 'x' z 'kp'
 
       if (i >= n_wsp_ruchu - 1) //docelowy zadany punkt. jeśli gdzieś powstałyby minimalne błędy, to tu są naprawiane
       { //... w sumie nie pamiętam co miał na celu ten warunek. pewnie jest już zbędny.
         n_y_temp = y; PrintPosToLCD("y", n_y_temp);
         n_z_temp = z; //PrintPosToLCD w poprawce pionowej
+        n_kp_temp = n_katPodstawa; //PrintPosToLCD("kp", n_y_temp); !!! tu ppwinno być przeliczanie na 'x' z 'kp'
       }
       if (b_show_info == true)
       {
-        Serial.print("y = "); Serial.print(n_y_temp);
+        Serial.print("kp = "); Serial.print(d_kp_temp);
+        Serial.print(", y = "); Serial.print(n_y_temp);
         Serial.print(", z = "); Serial.print(n_z_temp); //wysokość będzie podawana ta, którą dopiero chcemy realnie osiągnąć poprzez kompensację błędu chwilę dalej, a którą zadaliśmy
       }
 
       //poniżej poprawka wysokosci - niech program myśli że jego zadane wartości są idealnie odwzorywane, a realnie obliczaj i ustawiaj kąty tak, by wyszło lepiej o skompensowany...
       //...zmierzony błąd
       n_z_temp += f_wektor_odchylek[n_y_temp - 100]; PrintPosToLCD("z", n_z_temp); //dodaj różnicę wysokości podstawy chwytaka i planszy
-      if (b_show_info == true) {
+      if (b_show_info == true) 
+      {
         Serial.print(", z_upgr = ");
         Serial.print(n_z_temp);
       }
+
       if (n_z_temp >= 236) //dla najdalszych bierek maxymalne możliwe podniesienie ramienia to 236 (dalej jest to poza polem roboczym manipulatora). powinno to być liczone w...
       { //...zalezności od możliwości, ale póki co jest to zablokowane dla wszystkich pozycji.
         n_z_temp = 235; PrintPosToLCD("z", n_z_temp);
+        //n_servo_speed = 255; //osiągnij prędkośc dla serw maxymalną, by szybko wyjść z warunku blokującego ruch (w tym przypadku serwa się nie ruszają, więc prędkość maxymalna...
+        //...serw jest tylko zmienną obliczeniową by w ułamku sekundy wyjśc z funkcji delay) - coś się tu pierdoli
         if (b_show_info == true) Serial.print("!!!");
       }
+      else //trochę naokoło ten kod poniżej. można się go pozbyć jak to się zrobi mądrzej
+      {
+        if (n_speed_changed == 0) n_servo_speed = SERVO_SPEED;  //predkosc serw podczas normalnej pracy (polecenia 'up' i 'down' zmieniają prędkość. tutaj trzeba to naprawiać)...
+        else n_servo_speed = n_speed_changed;
+        if (b_up == true || b_down == true) n_servo_speed = n_servo_speed_updown;
+      }
+
+      y_kwadrat = n_y_temp * n_y_temp; //Serial.print("y^2 = "); Serial.println(y_kwadrat);
 
       z0 = n_z_temp - z1; //odległość punktu P(y,z) od wysokośći na której jest servoB w pionie- założenie, że punkt nigdy nie jest poniżej serva (nigdy nie będzie)
       z0_kwadrat = z0 * z0; //Serial.print("z0^2 = "); Serial.println(z0_kwadrat);
-      y_kwadrat = n_y_temp * n_y_temp; //Serial.print("y^2 = "); Serial.println(y_kwadrat);
       L = sqrt(z0_kwadrat + y_kwadrat); /*przekątna od servaB do punktu P(y,z)*/ //Serial.print("przekatna  [mm]= "); Serial.println(L);
+
       pre_alpha1_rad = (L * L + a * a - b * b) / (2 * L * a); /*obliczanie alpha1 w radianach bez acos*/ //Serial.print("pre_alpha1_rad= "); Serial.println(pre_alpha1_rad);
       pre_alpha2_rad = n_y_temp / L; /*obliczanie alpha2 w radianach bez acos*/ //Serial.print("pre_alpha2_rad= "); Serial.println(pre_alpha2_rad);
       alpha_rad = acos(pre_alpha1_rad) + acos(pre_alpha2_rad); /*cały kąt alpha w radianach*/ //Serial.print("alpha_rad= "); Serial.println(alpha_rad);
-      alpha = (180 / PI) * alpha_rad; /*docelowy kąt alpha*/ if (b_show_info == true) {
+      alpha = (180 / PI) * alpha_rad; /*docelowy kąt alpha*/
+      if (b_show_info == true)
+      {
         Serial.print("  |  alpha= ");
         Serial.print(alpha);
       }
+
       //pre_beta_rad = (a*a + b*b - L*L) / (2*a*b); /*obliczanie bety w radianach bez acos*/ //Serial.print("pre_beta_rad= "); Serial.println(pre_beta_rad);
       beta_rad = acos((a * a + b * b - L * L) / (2 * a * b)); /*obliczanie bety w radianach*/ //Serial.print("beta_rad= "); Serial.println(beta_rad);
       beta = (180 / PI) * beta_rad; /*kąt beta docelowy.*/
@@ -558,12 +499,14 @@ void loop() //wieczna główna pętla programu
         Serial.print(", beta= ");
         Serial.print(beta);
       }
+
       if (beta >= 157)
       {
         Serial.print("!!!");
-        beta = 156; //!!servo beta ma słaby zakres!!!
+        beta = 156; /*!!servo beta ma słaby zakres!!! */
       }
-      if (b_up == true || b_down == true || stringOne.substring(0, 1) == "(") //jeżeli ruch łapa idzie w dół/górę lub ruch odbywa się funkcją serwisową...
+
+      if (b_up == true || b_down == true || coreCommand.substring(0, 1) == "(") //jeżeli ruch łapa idzie w dół/górę lub ruch odbywa się funkcją serwisową...
       { //... to licz kąt fi normalnie, tak by chwytak był zawsze prostopadły do planszy...
         fi = 270 - alpha - beta; /*kąt fi docelowy*/
       }
@@ -572,20 +515,22 @@ void loop() //wieczna główna pętla programu
       {
         Serial.print(", fi= ");
         if (fi == 179) Serial.print(fi);
-        else Serial.print(fi + 7);
+        else Serial.print(fi + n_fi_poprawka);
         Serial.print(", kp= "); Serial.println(n_katPodstawa);
       }
 
       if (alpha <= 180 && alpha >= 0 && beta <= 157 && beta >= 24 && fi <= 180 && fi >= 45) //dopuszczalne kąty.
         //servo beta dziala w przedziale od 24 do 157 stopni. servo fi minimum 45, bo by gniotło się o ramię przed nim
       { //jeżeli wartości kątów mieszczą się w dopuszczalnych wartościach, to zezwól na ich ustalenie i kontynuuj obliczanie/ruch
+        servoA.write(n_kp_temp, n_servo_speed, false); //PrintAngleToLCD("servoA"); tutaj to nie zadziala. musi być warunek dla n_kp_temp
         servoB.write(alpha, n_servo_speed, false); PrintAngleToLCD("servoB");
         servoC.write(beta, n_servo_speed, false); PrintAngleToLCD("servoC");
-        servoD.write(fi + 7, 70, false); PrintAngleToLCD("servoD"); //bardzo problematyczne jest ustawić kąt mechanicznie. dodaję +7stopni do fi zawsze by wyszło tyle ile jest założone.
+        servoD.write(fi + n_fi_poprawka, 35, true); PrintAngleToLCD("servoD"); //bardzo problematyczne jest ustawić kąt mechanicznie. zmieniam o n_fi_poprawka stopni do fi zawsze by wyszło tyle ile jest założone.
       }
       else //jeżeli kąt wyskoczył poza dopuszczalne wartości, to ustaw bezpieczne wartości, pokaż gdzie był błąd w zmiennych i wyjdź z pętli
       {
         Serial.println("ERROR: Kat poza zakresem. Przerwanie ruchu i wyjscie z petli.");
+        servoA.write(90, n_servo_speed, false); PrintAngleToLCD("servoA");
         servoB.write(90, n_servo_speed, false); PrintAngleToLCD("servoB");
         servoC.write(90, n_servo_speed, false); PrintAngleToLCD("servoC");
         servoD.write(90, n_servo_speed, false); PrintAngleToLCD("servoD");
@@ -600,35 +545,40 @@ void loop() //wieczna główna pętla programu
         Serial.print("alpha_rad= "); Serial.println(alpha_rad);
         Serial.print("pre_beta_rad= "); Serial.println(pre_beta_rad);
         Serial.print("beta_rad= "); Serial.println(beta_rad);
-        alpha = 90; beta = 90; fi = 90; y = b; z = z1 + a; //wartości jak z 'reset'
+        n_katPodstawa = 90; alpha = 90; beta = 90; fi = 90; y = b; z = z1 + a; //wartości jak z 'reset'
         PrintPosToLCD("y", y); PrintPosToLCD("z", z);
-        i = n_wsp_ruchu - 1; //po tym wyjdzie z petli
+        i = n_wsp_ruchu - 1; //po tym wyjdź z petli
       }
+
       delay(15000 / (n_servo_speed * n_wsp_ruchu)); //po każdej iteracji czekaj chwilę, aby serwa zdążyły powoli dojechać. współczynnik wyznaczony empirycznie (tj. na oko).
       if (b_przerywanie_petli == true)
       { //dla wstepnego ustawienia ramion tylko raz licz katy serw
         b_przerywanie_petli = false;
-        i = n_wsp_ruchu - 1; //te 'i' przerwie pętle
+        i = n_wsp_ruchu - 1; //owa zmienna 'i' przerwie pętle w kolejnym przejściu
       }
     }
+
     //wartości mimo iż są ok, przypisywane są jeszcze raz, bo możliwe że po wielu przejściach kąty będą się przesuwać o małe wartości
-    d_y_temp = y; /*powtórne dla pierwszego ustawienia ramienia- nie szkodzi*/
+    d_kp_temp = n_katPodstawa; /*powtórne dla pierwszego ustawienia ramienia- nie szkodzi*/
+    d_y_temp = y;
     d_z_temp = z;
+
     if (n_speed_changed == 0) n_servo_speed = SERVO_SPEED;  //predkosc serw podczas normalnej pracy (polecenia 'up' i 'down' zmieniają prędkość. tutaj trzeba to naprawiać)...
     else n_servo_speed = n_speed_changed; //...jeżeli jednak prędkość była zmieniana ręcznie to będzie ona wracała zawsze do podanej ręcznie wartości.
-    if (b_up == true && b_sekwencja_ruchow == true)
-    {
-      servoD.write(179, 70, false); //jeżeli łapa się podniosła podczas rozgrywania partii szachów, to podnieś na maxymalnie nad bierki...
+
+    if (b_up == true && b_sekwencja_ruchow == true) //jeżeli łapa się podniosła podczas rozgrywania partii szachów, to podnieś łapę maxymalnie nad bierki...
+    { //...poprzez danie maxymalnego kąta fi (wyprostowanie ramienia)
+      servoD.write(179, 70, true); //parametr true powinien wykonać najpierw podniesienie zanim kod ruszy dalej
+      delay(10); //nie wiem czemu to służy, ale używane tego przy wartości true na tutorialu, więc nie zaszkodzi
       PrintAngleToLCD("servoD");
     }
-    //...poprzez danie maxymalnego kąta fi (podobnie co wyżej. dobrze by było zrobić to w kodzie w 1 bloku i miejscu)
     else if (b_down == false) //po przeniesieniu się nad planszą ustaw sobie już kąt do zejścia po bierkę
     {
       fi = 270 - alpha - beta;
-      servoD.write(fi + 7, 70, false);
+      servoD.write(fi + n_fi_poprawka, 70, false);
       PrintAngleToLCD("servoD");
     }
-    b_up = false; b_down = false; //jeżeli był wykonywny ruch typu up/down to zresetuj te zmienne, by w kolejnym przejściu arduino nie zareagowało na nie.
+
     if (b_sekwencja_ruchow == true) //jeżeli mieliśmy do czynienia z ruchem generowanym z gry/ze strony...
     {
       if (Str_move_case == "armUp2") //... i jeżeli był to ostatni ruch z sekwencji przemieszczania pionka...
@@ -638,7 +588,7 @@ void loop() //wieczna główna pętla programu
       }
       //... a na końcu wyślij do core informację o tym jaki żądany ruch z core'a został wykonany:
       // jeżeli żądanie ruchu zawierało pole nad które miała się łapa ruszyć, to do informacji zwrotnej dopisz też informację o tym jakie to było pole (zbędna ochrona)...
-      if (Str_move_case.substring(0, 5) == "moved") //(Str_move_case == "movedFrom" || Str_move_case == "movedTo" || Str_move_case == "movedToR")
+      if (Str_move_case.substring(2, 7) == "moved") //(Str_move_case == "movedFrom" || Str_move_case == "movedTo" || Str_move_case == "movedToR")
       {
         String Str_sqare = " " + (String)Str_litera_pola + (String)n_wsp_n;
         AnswerToCore(Str_move_case, Str_sqare);
@@ -646,7 +596,16 @@ void loop() //wieczna główna pętla programu
       else AnswerToCore(Str_move_case, ""); //...a dla innych ruchów wyślij samą odpowiedź o wykonanym ruchu.
       // !!w rdzeniu (core) mam stare ustawienia wg których każda wiadomość kończy się dolarem. zobaczyć czy to coś psuje (nie widać by coś się złego działo).
     }
-    stringOne = ""; //po przejściu przez cały program wyczyść tą zmienną, by w kolejnym przejściu nie został uruchomiony któryś warunek.
+
+    if (b_down == false && Str_move_case != "trashedR") //jeżeli funkcja nie wykonywała ruchu typu down ani usuwania bierki
+    { // warunek aby nie wywracało bierek skrajnych
+      alpha += 8;
+      servoB.write(alpha, 6, true); PrintAngleToLCD("servoB");
+    }
+
+    /*czyszczenie zmiennych*/
+    b_up = false; b_down = false; //jeżeli był wykonywny ruch typu up/down to zresetuj te zmienne, by w kolejnym przejściu arduino nie zareagowało na nie.
+    coreCommand = ""; //po przejściu przez cały program wyczyść tą zmienną, by w kolejnym przejściu nie został uruchomiony któryś warunek.
     if (b_show_info == true) Serial.println("");
   }
 }
@@ -759,5 +718,126 @@ void PrintPosToLCD(String Str_pos, int n_axis_pos)
       lcd2.print(n_axis_pos);
     }
   }
+}
+
+void Open()
+{
+  n_katSzczeki = 102;
+  servoE.write(n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoE");
+  servoF.write(n_wsp_ks2 - n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoF");
+  if (b_show_info == true) 
+  {
+    Serial.print("opened. katSzczeki = ");
+    Serial.println(n_katSzczeki);
+  }
+  //poniżej warunki gdy jest wykonywany oficjalny ruch bierki podczas rozgrywki
+  if (coreCommand.substring(0, 7) == "n_open1" && b_sekwencja_ruchow == true) AnswerToCore("", "n_opened1"); 
+  else if (coreCommand.substring(0, 7) == "n_open2" && b_sekwencja_ruchow == true) AnswerToCore("", "n_opened2");
+  else if (coreCommand.substring(0, 7) == "r_open1" && b_sekwencja_ruchow == true) AnswerToCore("", "r_opened1");
+  else if (coreCommand.substring(0, 7) == "r_open2" && b_sekwencja_ruchow == true) AnswerToCore("", "r_opened2");
+  else if (coreCommand.substring(0, 7) == "c_open1" && b_sekwencja_ruchow == true) AnswerToCore("", "c_opened1");
+  else if (coreCommand.substring(0, 7) == "c_open2" && b_sekwencja_ruchow == true) AnswerToCore("", "c_opened2");
+  else if (coreCommand.substring(0, 7) == "c_open3" && b_sekwencja_ruchow == true) AnswerToCore("", "c_opened3");
+  coreCommand = "";
+}
+
+void Close()
+{
+  n_katSzczeki = 83;
+  servoE.write(n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoE");
+  servoF.write(n_wsp_ks2 - n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoF");
+  if (b_show_info == true) 
+  {
+    Serial.print("closed. katSzczeki = ");
+    Serial.println(n_katSzczeki);
+  }
+  if (coreCommand.substring(0, 8) == "n_close1" && b_sekwencja_ruchow == true) AnswerToCore("", "n_closed1");
+  else if (coreCommand.substring(0, 7) == "r_close" && b_sekwencja_ruchow == true) AnswerToCore("", "r_closed");
+  else if (coreCommand.substring(0, 8) == "c_closeK" && b_sekwencja_ruchow == true) AnswerToCore("", "c_closedK");
+  else if (coreCommand.substring(0, 8) == "c_closeR" && b_sekwencja_ruchow == true) AnswerToCore("", "c_closedR");
+  coreCommand = "";
+}
+
+void Up()
+{
+  b_up = true;
+  z = 230; //jedna z 2 możliwych 'z' możliwych docelowo do osiągnięcia w programie (inne są zbędne)
+  n_servo_speed = n_servo_speed_updown; //predkosc serw podczas podnoszenia od planszy
+  if (b_show_info == true)
+  {
+    Serial.print("up: ");
+    Serial.print("y [mm] = "); Serial.print(y);
+    Serial.print(", z [mm] = "); Serial.println(z);
+  }
+}
+
+void Down()
+{
+  b_down = true;
+  z = 158; //jw. w 'up'
+  n_servo_speed = n_servo_speed_updown; //predkosc serw podczas opadania ku planszy
+  if (b_show_info == true)
+  {
+    Serial.println("down: ");
+    Serial.print("y [mm] = "); Serial.print(y);
+    Serial.print(", z [mm] = "); Serial.println(z);
+  }
+}
+
+void Trash()
+{
+    n_katPodstawa = 175; //ustaw podstawe nad pundełkiem na zbite bierki...
+    servoA.write(n_katPodstawa, 18, false); PrintAngleToLCD("servoA"); PrintPosToLCD("x", -1); //speed ustawiony na sztywno
+    coreCommand = "(170,240)"; //...i wyceluj tam na płaszczyźnie (y,z).
+    Str_move_case = "r_trashed";
+}
+
+void PrepareAnswer()
+{
+
+  if (coreCommand.substring(5, 7) == "]f") //jeżeli wiadomość to np. [a2]f to arduino rozpoczyna wymianę danych z core'm
+  //wiadomość oznacza żądanie przeniesienia pionka "z pozycji (f-from)". w tym ruchu ustawiane jest ramie w pukncie P nad pionkiem do podniesienia.
+  { 
+    b_show_info = false; //na wszelki wypadek wyłącz pokazywanie innych informacji (rozwaliły by komunikację)
+    b_sekwencja_ruchow = true; //rozpoczęto rozmowe z core'm, więc niektóre ruchy wykonywać mają się trochę inaczej
+    if (coreCommand.substring(0, 2) == "c_" && coreCommand.substring(6, 7) == "K") Str_move_case = "c_movedFrom1";
+    else if (coreCommand.substring(0, 2) == "c_" && coreCommand.substring(6, 7) == "R") Str_move_case = "c_movedFrom2";
+    else Str_move_case = "n_movedFrom"; //zostaje ustawiona zmienna, która po wykonaniu ruchu przez łapę zostanie wysłana core, jako potwierdzenie tego co miało się wykonać (i czekanie na...
+    //...kolejny sygnał z sekwencji ruchów
+  }
+  
+  else if (coreCommand.substring(5, 7) == "]t")
+  {
+    if (coreCommand.substring(0, 2) == "c_" && coreCommand.substring(6, 7) == "K") Str_move_case = "c_movedToK";
+    else if (coreCommand.substring(0, 2) == "c_" && coreCommand.substring(6, 7) == "R") Str_move_case = "c_movedToR";
+    else Str_move_case = "n_movedTo"; 
+  }
+  
+  else if (coreCommand.substring(0, 7) == "n_down1") Str_move_case = "n_armDown1"; 
+  else if (coreCommand.substring(0, 5) == "n_up1") Str_move_case = "n_armUp1";
+  else if (coreCommand.substring(0, 7) == "n_down2") Str_move_case = "n_armDown2"; 
+  else if (coreCommand.substring(0, 5) == "n_up2") Str_move_case = "n_armUp2"; 
+
+  //usuwanie pionków z planszy:
+  else if (coreCommand.substring(0, 2) == "r_") //sekwencja poprzedza zwykłe przemieszczanie bierki. ma to miejsce, gdy bierka ma wylądować na polu na którym jest bierka wroga.
+  //o tym czy na bitym polu na pewno jest bierka wroga decyduje program szachowy, który przed ruchami arduino bada czy ruch może być wykonany.
+  {
+    b_show_info = false;
+    b_sekwencja_ruchow = true;
+    Str_move_case = "r_movedTo";
+  }
+  else if (coreCommand.substring(0, 6) == "r_down") Str_move_case = "r_armDown";
+  else if (coreCommand.substring(0, 4) == "r_up") Str_move_case = "r_armUp";
+  else if (coreCommand.substring(0, 7) == "r_trash") Trash();
+
+  //warunki roszady:
+  else if (coreCommand.substring(0, 5) == "c_up1") Str_move_case = "c_armUp1";
+  else if (coreCommand.substring(0, 5) == "c_up2") Str_move_case = "c_armUp2";
+  else if (coreCommand.substring(0, 5) == "c_up3") Str_move_case = "c_armUp3";
+  else if (coreCommand.substring(0, 5) == "c_up4") Str_move_case = "c_armUp4";
+  else if (coreCommand.substring(0, 7) == "c_down1") Str_move_case = "c_armDown1";
+  else if (coreCommand.substring(0, 7) == "c_down2") Str_move_case = "c_armDown2";
+  else if (coreCommand.substring(0, 7) == "c_down3") Str_move_case = "c_armDown3";
+  else if (coreCommand.substring(0, 7) == "c_down4") Str_move_case = "c_armDown4";
 }
 
