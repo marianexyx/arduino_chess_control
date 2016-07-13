@@ -1,0 +1,46 @@
+#####################################################################
+
+#	Syntax Colouring Map 
+#####################################################################
+
+
+
+#####################################################################
+
+# Datatypes (KEYWORD1)
+
+####################################################################
+
+cSilnik	KEYWORD1
+cLCD_pos	KEYWORD1
+cLCD_angle	KEYWORD1
+
+#####################################################################
+
+#	Methods and Functions (KEYWORD2)
+
+#####################################################################
+
+
+
+rozpocznij	KEYWORD2
+ustaw_kat	KEYWORD2
+podniesPrewencyjnie	KEYWORD2
+przygotujFi	KEYWORD2
+otworz	KEYWORD2
+zamknij	KEYWORD2
+smietnik	KEYWORD2
+Kat	KEYWORD2
+Predkosc	KEYWORD2
+NazwaKata	KEYWORD2
+KatMin	KEYWORD2
+KatMax	KEYWORD2
+PrintPos	KEYWORD2
+PrintAngle	KEYWORD2
+
+
+#####################################################################
+
+#	END of Syntax Definitions
+
+#####################################################################

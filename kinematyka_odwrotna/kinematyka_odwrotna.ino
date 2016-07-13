@@ -1,26 +1,38 @@
 //-------------------------------------------------------------INCLUDES-------------------------------------------------------------//
+#pragma once
 #include <VarSpeedServo.h> //biblioteka odpowiedzialna za powolny ruch serw (nowa funkcja write() )
-//dokonać odpowiednich konwersji. albo wyrzucić całą matematykę poza arduino do Qt
-#include <math.h> //cosinusy, PI itd
 #include <LiquidCrystal.h> //panele lcd
-#include "Arduino.h"
+#include <math.h> //cosinusy, PI itd
+#include "Arduino.h" //chyba to jest potrzebne do includów or smtg
+#include "silnik.h"
+#include "lcd_pos.h"
+#include "lcd_angle.h"
+/*#include "serwis.h"
+  #include "komunikacja.h"
+  #include "szachownica.h"
+  #include "ramie.h"*/
 
-LiquidCrystal lcd1(32, 30, 28, 26, 24, 22);
-LiquidCrystal lcd2(33, 31, 29, 27, 25, 23);
+
 
 #define SERVO_POWER_PIN1 50 //zamiast pinów posługujemy się zdefiniowanymi słowami
 #define SERVO_POWER_PIN2 51
-#define POWER_LED_PIN 40
-#define POWER_PIN 41
-bool b_power_state; //do sprawdznia czy zasilacz jest włączony
 
-VarSpeedServo servoA, servoB, servoC, servoD, servoE, servoF; //definicja serw wg specjalnej biblioteki
+cLCD_angle LCD_angle(32, 30, 28, 26, 24, 22, 16, 2);
+cLCD_pos LCD_pos(33, 31, 29, 27, 25, 23, 20, 2);
+
+cSilnik servoA(2, "servoA", "kp", 15, 175, &LCD_angle, &LCD_pos);
+cSilnik servoB(3, "servoB", "alpha", 0, 180, &LCD_angle, &LCD_pos); // !!za duże wartości!!
+cSilnik servoC(4, "servoC", "beta", 24, 157, &LCD_angle, &LCD_pos);
+cSilnik servoD(5, "servoD", "fi", 45, 180, &LCD_angle, &LCD_pos);
+cSilnik servoE(6, "servoE", "ks1", 82, 131, &LCD_angle, &LCD_pos); //nie potrzeba by działało dla szerszych wartości
+cSilnik servoF(7, "servoF", "ks2", 200 - 131, 200 - 82, &LCD_angle, &LCD_pos); //2gie servo w szczekach jest obrocone(180 stopno) i przesuniete o 20 stopni w dzialaniu
+
 double alpha_rad, beta_rad; //kąty serw B i C w radianach
 double fi1, fi2, fi3, fi_rad; //skomplikowane liczenie kąta fi w kilku krokach
 int n_fi_poprawka = -1;
 float f_katPodstawa; //kąt podstawy- serwo podstawy. jako float
 int n_katPodstawa = 90; int n_katSzczeki = 90; //kąty podstawy i szczęk jako integery. na starcie zdefiniowane na 90 stopni (środek zakresu pracy serwa)
-double alpha = 90, beta = 90, fi = 90, fi_temp = fi, fi_last = fi; // kąty serw przy ładowaniu programu. jw.
+double alpha = 90, beta = 90, fi = 90, fi_temp = 90, fi_last = 90; // kąty serw przy ładowaniu programu. jw.
 double a = 180; double b = 184; double c = 142; //dlugosci ramion [mm]. dlugosc C mierzona do podstawy chwytaka. reszta to odległości pomiędzy orczykami serw
 int z1 = 116; //[mm] odległość planszy od servaB (alpha) - pierwszy człon ruchumy ramienia wisi w powietrzu
 unsigned long z0; //odległość punktu P(y,z) od wysokośći na której jest servoB w pionie (wartość obliczana dopiero jak podane jest "z" w "P").
@@ -45,14 +57,14 @@ int n_servo_speed = 18; //predkosc dla serw podczas wstepnego ustawiania. warto�
 const int SERVO_SPEED = n_servo_speed; //podczas pracy ramienia prędkość ruchu serw jest zmieniana. by wracać to pierwotnej używamy tej stałej.
 int n_speed_changed = 0; // program co zakończenie ruchu ustawia sobie zdefiniowaną stałą prędkość ruchu ramienia. jeżeli ręcznie zmienimy tą prędkość funkcją serwisową "speed ="...
 //...to będzie utrzymywał prędkość tej tutaj zmiennej. 0 na starcie by omijać tą zmienną jak nic nie ruszymy.
-int n_servo_speed_updown = 2; // normalnie jest 2
+//int n_servo_speed_updown = 2; // normalnie jest 2
 int n_wsp_ruchu = 65; // ustawione na 65 było //współczynnik definiujący ilość pojedyńczych skoków/iteracji w ruchu ramienia (jego przenoszenia). wartość na wyczucie.
 bool b_przerywanie_petli = false; //przerywa pętle po wstepnym ustawieniu serw (by wykonało tylko jedną iterację, anie wszystkie z "n_wsp_ruchu").
 bool b_show_info = false; // jeżeli = true, to wypluwa na serial port tonę informacji o swoim stanie podczas działania. by działać z core'm musi być ustawione na false.
 bool b_sekwencja_ruchow = false; //definiuje czy ruch jest spowodowany ręcznie (false), czy przez core (true). wartości core'a zmieniają tą zmienną.
 bool b_znaki_koncow_linii = true; //definiuje czy dodajemy w funkcji znaki dla początku i końca wiadomości dla poprawnej komunikacji asynchronicznej z core'm
 String Str_move_case = "none"; //zmienna po której komunikuje się arduino z core'em, tj. mówi mu co aktualnie za żądanych ruch wykonał.
-int n_wsp_ks2 = 200; //pomocniczna zmienna tutaj, by nie wpisywac jej 5 razy w kodzie. na jej podstawie obliczany jest kąt serwa szczęki nr2
+
 float f_wektor_odchylek[] = { -11, -10.9, -10.8, -10.7, -10.6, -10.5, -10.4, -10.3, -10.2, -10.1, -10, -9.7, -9.4, -9.1, -8.8, -8.5, -8.2, -7.9, -7.6, -7.3, -7, -7.3, -7.6, -7.9, -8.2,
                               -8.5, -8.8, -9.1, -9.4, -9.7, -10, -9.5, -9, -8.5, -8, -7.5, -7, -6.5, -6, -5.5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -4.9, -4.8, -4.7, -4.6, -4.5, -4.4, -4.3, -4.2, -4.1, -4,
                               -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -3.7, -3.4, -3.1, -2.8, -2.5, -2.2, -1.9, -1.6, -1.3, -1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6,
@@ -89,26 +101,32 @@ double d_c_array[] = {107.4, 107.8, 108.2, 108.6, 109.0, 109.4, 109.8, 110.2, 79
 //-------------------------------------------------------------SETUP-------------------------------------------------------------//
 void setup() //kod kóry wykona się raz
 {
+    servoA.rozpocznij();
+    servoB.rozpocznij();
+    servoC.rozpocznij();
+    servoD.rozpocznij();
+    servoE.rozpocznij();
+    servoF.rozpocznij();
+
+    servoA.ustaw_kat(90, MOTOR_SPEED_FAST);
+    servoB.ustaw_kat(90, MOTOR_SPEED_FAST);
+    servoC.ustaw_kat(90, MOTOR_SPEED_FAST);
+    servoD.ustaw_kat(90 + n_fi_poprawka, MOTOR_SPEED_FAST);
+    servoE.ustaw_kat(90, MOTOR_SPEED_FAST);
+    servoF.ustaw_kat(200 - 90, MOTOR_SPEED_FAST);
+
+    LCD_angle.PrintAngle("servoA",servoA.Kat());
+    LCD_angle.PrintAngle("servoB",servoB.Kat());
+    LCD_angle.PrintAngle("servoC",servoC.Kat());
+    LCD_angle.PrintAngle("servoD",servoD.Kat());
+    LCD_angle.PrintAngle("servoE",servoE.Kat());
+    LCD_angle.PrintAngle("servoF",servoF.Kat());
+
   pinMode(SERVO_POWER_PIN1, OUTPUT); //ustawianie tego pinu jako wyjście, tj. będziemy tu czymś sterować. pin włącza przekaźnikiem zasilanie na serva
   pinMode(SERVO_POWER_PIN2, OUTPUT);
   digitalWrite(SERVO_POWER_PIN1, HIGH); //przekaźnik działa na odwrót, zatem by był on na starcie wyłączony to dajemy na jego pin stan wysoki
   digitalWrite(SERVO_POWER_PIN2, HIGH);
 
-  //ustaw zasilacz wyłączony
-  pinMode(POWER_LED_PIN, OUTPUT); //dioda led zasilacza. póki co tylko tu w kodzie
-  digitalWrite(POWER_LED_PIN, LOW);
-  pinMode(POWER_PIN, OUTPUT);
-  digitalWrite(POWER_PIN, LOW); //mechanicznie nic nie podpięte, ale programowo trzeba włączać (dać na pin zasilania stan wysoki) by poszedł prąd na serwa- info dalej
-
-  lcd1.begin(16, 2);
-  lcd2.begin(20, 2);
-  lcd1.clear();
-  lcd2.clear();
-
-  servoA.attach(2); servoB.attach(3); servoC.attach(4); servoD.attach(5); servoE.attach(6); servoF.attach(7); //podpinanie serwomechanizmów to tych pinów. piny muszą być PWN
-  servoA.write(n_katPodstawa, n_servo_speed, false); servoB.write(alpha, n_servo_speed, false); servoC.write(beta, n_servo_speed, false); //ustawienie wstępnej pozycji serw by w razie...
-  servoD.write(fi + n_fi_poprawka, n_servo_speed, false); servoE.write(n_katSzczeki, n_servo_speed, false); servoF.write(n_wsp_ks2 - n_katSzczeki, n_servo_speed, false); //...awarii kodu łapa nie runęła na szachy
-  PrintAngleToLCD("servoA"); PrintAngleToLCD("servoB"); PrintAngleToLCD("servoC"); PrintAngleToLCD("servoD"); PrintAngleToLCD("servoE"); PrintAngleToLCD("servoF");
   coreCommand = "(184,296)"; //ustawienie dla pierwszego uruchomienia łapy. dla tego punktu P(y,z) wszystkie ważne serwa powinny mieć ustawione 90 stopni po przejściu przez kod
   Serial.begin(9600); //rozpocznij komunikację po usb z prędkośćią 9600 bitów/s
 }
@@ -119,20 +137,19 @@ void loop() //wieczna główna pętla programu
   while (Serial.available()) //gdy pojawi się na porcie jakaś wiadomość...
   {
     coreCommand = Serial.readString(); //... zapisz ją w tej zmiennej.
+    PrepareAnswer();
   }
 
-  PrepareAnswer();
-  
   //w powyższym warunku głównie była zmieniana wartość zmiennej Str_move_case. tutaj jest wykonywana reszta/większa część ruchów, gdzie np. wartość up2 wpada do warunku wyżej i tu.
   if (coreCommand.substring(0, 5) == "reset") //funckja serwisowa. ustawia serwa na pozycję startową
   {
     AnswerToCore("", "Reset: kat szczeki = 90, kat podstawy = 90");
-    y = b; z = z1 + a; PrintPosToLCD("y", y); PrintPosToLCD("z", z); //ustawienia wynikajace z katow = 90
+    y = b; z = z1 + a; LCD_pos.PrintPos("y", y); LCD_pos.PrintPos("z", z); //ustawienia wynikajace z katow = 90
     coreCommand = "(184,296)"; //to samo co wyzej
     n_katSzczeki = 90; n_katPodstawa = 90;
-    servoA.write(n_katPodstawa, n_servo_speed, false); PrintAngleToLCD("servoA"); PrintPosToLCD("x", -1);
-    servoE.write(n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoE");
-    servoF.write(n_wsp_ks2 - n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoF");
+    servoA.ustaw_kat(90, MOTOR_SPEED_NORMAL); LCD_angle.PrintAngle("servoA", servoA.Kat()); LCD_pos.PrintPos("x", -1); 
+    servoE.ustaw_kat(90, MOTOR_SPEED_NORMAL); LCD_angle.PrintAngle("servoE", servoE.Kat()); 
+    servoF.ustaw_kat(200 - 90, MOTOR_SPEED_NORMAL); LCD_angle.PrintAngle("servoF", servoF.Kat()); 
   }
   else if (coreCommand.substring(0, 7) == "speed =") //funckja serwisowa. ustawia prędkość przemieszczania się ramienia (bez up/down)
   {
@@ -153,10 +170,11 @@ void loop() //wieczna główna pętla programu
     alpha = Str_alpha.toInt();
     if (alpha <= 180 && alpha >= 0)
     {
-      servoB.write(alpha, n_servo_speed, false);
-      PrintAngleToLCD("servoB");
-      PrintPosToLCD("y", -1); //ruszenie ręcznie kąta alpha gubi pozycję (y,z)
-      PrintPosToLCD("z", -1);
+      servoB.ustaw_kat(alpha, MOTOR_SPEED_NORMAL); 
+      LCD_angle.PrintAngle("servoB", servoB.Kat());
+      LCD_pos.PrintPos("y", -1); //ruszenie ręcznie kąta alpha gubi pozycję (y,z)
+      LCD_pos.PrintPos("z", -1);
+      
       Serial.print("alpha = ");
       Serial.println(alpha);
     }
@@ -169,10 +187,11 @@ void loop() //wieczna główna pętla programu
     beta = Str_beta.toInt();
     if (beta <= 157 && beta >= 24) //servo beta dziala w przedziale do 157 stopni
     {
-      servoC.write(beta, n_servo_speed, false);
-      PrintAngleToLCD("servoC");
-      PrintPosToLCD("y", -1); //ruszenie ręcznie kąta beta gubi pozycję (y,z)
-      PrintPosToLCD("z", -1);
+      servoB.ustaw_kat(beta, MOTOR_SPEED_NORMAL); 
+      LCD_angle.PrintAngle("servoC", servoC.Kat());
+      LCD_pos.PrintPos("y", -1); //ruszenie ręcznie kąta beta gubi pozycję (y,z)
+      LCD_pos.PrintPos("z", -1);
+
       Serial.print("beta = ");
       Serial.println(beta);
     }
@@ -185,8 +204,9 @@ void loop() //wieczna główna pętla programu
     n_katSzczeki = Str_katSzczeki.toInt();
     if (n_katSzczeki >= 82 && n_katSzczeki <= 131) //nie potrzeba by działało dla szerszych wartości
     {
-      servoE.write(n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoE");
-      servoF.write(n_wsp_ks2 - n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoF"); //drugie serwo w szczękach uastawia sobie kąt na odwrót, by współgrać z tym pierwszym. współczynnik zdobyty doświadczalnie
+      servoE.ustaw_kat(n_katSzczeki, MOTOR_SPEED_NORMAL);  LCD_angle.PrintAngle("servoE", servoE.Kat());
+      //drugie serwo w szczękach uastawia sobie kąt na odwrót, by współgrać z tym pierwszym. współczynnik zdobyty doświadczalnie
+      servoF.ustaw_kat(200 - n_katSzczeki, MOTOR_SPEED_NORMAL);  LCD_angle.PrintAngle("servoF", servoF.Kat()); 
       Serial.print("kat szczeki = "); Serial.println(n_katSzczeki);
     }
     else Serial.println("katSzczeki podany poza zakresem <82,131>");
@@ -198,11 +218,12 @@ void loop() //wieczna główna pętla programu
     n_katPodstawa = Str_katPodstawa.toInt();
     if (n_katPodstawa >= 15 && n_katPodstawa <= 175)
     {
-      servoA.write(n_katPodstawa, n_servo_speed, false);
-      PrintAngleToLCD("servoA");
-      PrintPosToLCD("x", -1); //ruszenie ręcznie kąta podstawy gubi wszystkie pozycje
-      PrintPosToLCD("y", -1);
-      PrintPosToLCD("z", -1);
+      servoA.ustaw_kat(n_katPodstawa, MOTOR_SPEED_NORMAL); 
+      LCD_angle.PrintAngle("servoA", servoA.Kat());
+      LCD_pos.PrintPos("x", -1); //ruszenie ręcznie kąta podstawy gubi wszystkie pozycje
+      LCD_pos.PrintPos("y", -1);
+      LCD_pos.PrintPos("z", -1);
+
       Serial.print("kat podstawy = ");
       Serial.println(n_katPodstawa);
     }
@@ -214,8 +235,8 @@ void loop() //wieczna główna pętla programu
     Str_fi = coreCommand.substring(5);
     fi = Str_fi.toInt();
     if (fi >= 45 && fi <= 180) {
-      servoD.write(fi, n_servo_speed, false);
-      PrintAngleToLCD("servoD");
+      servoD.ustaw_kat(fi, MOTOR_SPEED_NORMAL); 
+      LCD_angle.PrintAngle("servoD", servoD.Kat());  
       Serial.print("fi = ");
       Serial.println(fi);
       Serial.print("Brak poprawki fi");
@@ -223,48 +244,23 @@ void loop() //wieczna główna pętla programu
     else Serial.println("fi podany poza zakresem <45,180>");
     coreCommand = "";
   }
-  else if (coreCommand.substring(2, 6) == "open") //otwieranie szczęk w celu odłożenia bierki na planszy, albo zejścia po nią
-  {
-    Open();
-  }
-  else if (coreCommand.substring(2, 7) == "close") //analogicznie do open
-  {
-    Close();
-  }
+  else if (coreCommand.substring(2, 6) == "open") Open(); //otwieranie szczęk w celu odłożenia bierki na planszy, albo zejścia po nią
+  else if (coreCommand.substring(2, 7) == "close") Close(); //analogicznie do open
   else if (coreCommand.substring(0, 7) == "turn on" || coreCommand.substring(0, 7) == "turn_on" || coreCommand.substring(0, 6) == "turnon")
   { //daj zasilanie na serwa...
-    b_power_state = digitalRead(POWER_PIN); //(nie używane póki co. nie wiem czy zadziała, bo ten pin był ustawiony bodajże jako ustalający, a nie odczytujący (input/output), chyba że
-    //tu jest rozpatrywany inny pin. sprawdzić póxniej)
-    if (b_power_state == HIGH) //...pod warunkiem, że zasilacz jest włączony, tj. zasilacz dostał komendę power on, albo odczytał na pinie że działał (miał napięcie na zasilaczu).
-    {
-      digitalWrite(SERVO_POWER_PIN1, LOW);
-      digitalWrite(SERVO_POWER_PIN2, LOW);
-      AnswerToCore("", "turn on servo power");
-    }
-    else AnswerToCore("", "ERROR: power supply is turned off.");
+    digitalWrite(SERVO_POWER_PIN1, LOW);
+    digitalWrite(SERVO_POWER_PIN2, LOW);
+    AnswerToCore("", "turn on servo power");
     coreCommand = "";
   }
   else if (coreCommand.substring(0, 8) == "turn off" || coreCommand.substring(0, 8) == "turn_off" || coreCommand.substring(0, 7) == "turnoff")
-  { //wyłączenie serw. jeżeli nie jest łapa dobrze oparta, to runie ona o podłoże. wprowadzić funkcję auto podpierania przed wyłączeniem.
+  { //!!!wyłączenie serw. jeżeli nie jest łapa dobrze oparta, to runie ona o podłoże. wprowadzić funkcję auto podpierania przed wyłączeniem.
     digitalWrite(SERVO_POWER_PIN1, HIGH);
     digitalWrite(SERVO_POWER_PIN2, HIGH);
     AnswerToCore("", "turn off servo power");
     coreCommand = "";
   }
-  else if (coreCommand.substring(0, 8) == "power on" || coreCommand.substring(0, 8) == "power_on" || coreCommand.substring(0, 7) == "poweron")
-  { //włącz zasilacz (jeżeli nie jest włączony ręcznie)
-    digitalWrite(POWER_LED_PIN, HIGH);
-    digitalWrite(POWER_PIN, HIGH);
-    AnswerToCore("", "power on");
-    coreCommand = "";
-  }
-  else if (coreCommand.substring(0, 9) == "power off" || coreCommand.substring(0, 9) == "power_off" || coreCommand.substring(0, 8) == "poweroff")
-  { //analogicznie do włącz
-    digitalWrite(POWER_LED_PIN, LOW);
-    digitalWrite(POWER_PIN, LOW);
-    AnswerToCore("", "power off");
-    coreCommand = "";
-  }
+
   else if (coreCommand.substring(0, 7) == "info on" || coreCommand.substring(0, 7) == "info_on" || coreCommand.substring(0, 6) == "infoon")
   { //pokazuj stan wszystkiego co się dzieje na procku (wyrzucaj info na port). włączamy do prac serwisowych. włączenie gry automatycznie wyłączy.
     b_show_info = true;
@@ -300,12 +296,12 @@ void loop() //wieczna główna pętla programu
         if (coreCommand.substring(11, 12) == ")") Str_litera_pola = coreCommand.substring(9, 10); //sprawdź jaka podana jest litera pola dla funkcji serwisowych...
         else if (coreCommand.substring(5, 6) == "]") Str_litera_pola = coreCommand.substring(3, 4); //... i funkcji obsługi gry.
         else Serial.print("error1");
-        if (b_show_info == true) 
+        if (b_show_info == true)
         {
           Serial.print("litera pola = ");
           Serial.println(Str_litera_pola);
         }
-        
+
         if (Str_litera_pola == "a" || Str_litera_pola == "A") {
           n_wsp_m = 3;  //zamień tą literę na współczynnik n_wsp_m (jego wartośc jest ważna dla obliczeń)...
           Str_litera_pola = "a";
@@ -339,32 +335,33 @@ void loop() //wieczna główna pętla programu
           Str_litera_pola = "h";
         }
         else Serial.println("ERROR: Złe podane pole planszy.");
-        
-        if (b_show_info == true) 
+
+        if (b_show_info == true)
         {
           Serial.print("m = ");
           Serial.println(n_wsp_m);
         }
-        
+
         if (coreCommand.substring(11, 12) == ")") Str_cyfra_pola = coreCommand.substring(10, 11); //sprawdź jaka podana jest cyfra pola dla funkcji serwisowych...
         else if (coreCommand.substring(5, 6) == "]") Str_cyfra_pola = coreCommand.substring(4, 5); //...i dla funkcji obsługi gry.
         else Serial.print("error2");
         n_wsp_n = Str_cyfra_pola.toInt(); //bezpośrednie przypisanie
-        if (b_show_info == true) 
+        if (b_show_info == true)
         {
           Serial.print("n = ");
           Serial.println(n_wsp_n);
         }
+
         d_kp_y = f_y0 + (f_dl_pola * n_wsp_n); //z rzeczywistych zależności oblicz składową 'y' dla obliczenia kąta podstawy
-        if (b_show_info == true) 
+        if (b_show_info == true)
         {
           Serial.print("y_kp = ");
           Serial.println(d_kp_y);
         }
         if (n_wsp_m >= 0) //dla pól A,B,C,D
         {
-          d_kp_x = f_dl_pola * n_wsp_m + (f_blad_srodka + f_dl_pola / 2); PrintPosToLCD("x", d_kp_x); //oblicz z rzeczywistych zależności składową 'x' dla obliczenia kąta podstawy
-          if (b_show_info == true) 
+          d_kp_x = f_dl_pola * n_wsp_m + (f_blad_srodka + f_dl_pola / 2); LCD_pos.PrintPos("x", d_kp_x); //oblicz z rzeczywistych zależności składową 'x' dla obliczenia kąta podstawy
+          if (b_show_info == true)
           {
             Serial.print("x = ");
             Serial.println(d_kp_x);
@@ -374,8 +371,8 @@ void loop() //wieczna główna pętla programu
         }
         else //dla pól E,F,G,H
         { //wzory są tutaj trochę inne, bo są "z drugiej strony planszy". na inne wzory wpływa też zasięg kątów w tangensie
-          d_kp_x  = f_dl_pola * (-n_wsp_m - 1) + f_dl_pola / 2 - f_blad_srodka; PrintPosToLCD("x", d_kp_x);
-          if (b_show_info == true) 
+          d_kp_x  = f_dl_pola * (-n_wsp_m - 1) + f_dl_pola / 2 - f_blad_srodka; LCD_pos.PrintPos("x", d_kp_x); 
+          if (b_show_info == true)
           {
             Serial.print("x = ");
             Serial.println(d_kp_x);
@@ -392,7 +389,7 @@ void loop() //wieczna główna pętla programu
           d_b = d_b_array[((-n_wsp_m + 3) * 8) + n_wsp_n - 1]; //składowa pionowa
           d_c = d_c_array[((-n_wsp_m + 3) * 8) + n_wsp_n - 1]; //składowa pozioma
           y = sqrt(d_b * d_b + d_c * d_c); //wartość której szukamy- przekątna dwóch składowych powyżej
-          if (b_show_info == true) 
+          if (b_show_info == true)
           {
             Serial.print("y [mm] = ");  //pokaż obliczoną odległość y
             Serial.println(y);
@@ -404,21 +401,15 @@ void loop() //wieczna główna pętla programu
     {
       if (y == 0) y = b; //jeżeli po odpaleniu ramienia nie była wprowadzona żadna wartość y, to ustaw domyślną. to jest ważne gdy po odpaleniu ramienia pierwszą rzeczą jaką...
       //...chcemy zrobić to podnieśc lub opóścić ramię, a nie ma jeszcze w programie wgranej żadnej wartości dla 'y'.
-      if (coreCommand.substring(2, 4) == "up") //jeżeli nie są przeprowadzane żadne ruchy po polach, to wpadamy do funkcji up/down. one też działają na ruch iteracyjnie
-      {
-        Up();
-      }
-      else if (coreCommand.substring(2, 6) == "down")
-      {
-        Down();
-      }
+      if (coreCommand.substring(2, 4) == "up") Up(); //jeżeli nie są przeprowadzane żadne ruchy po polach, to wpadamy do funkcji up/down. one też działają na ruch iteracyjnie
+      else if (coreCommand.substring(2, 6) == "down") Down();
     }
 
     if (d_y_temp == 0 || d_z_temp == 0 || d_kp_temp == 0) //dla pierwszego automatycznego ustawienia ramienia nie obliczaj przesuwu od poprzedniego ruchu
     { //tempy są zerami jak nie było jeszcze żadnego przejścia przez pętle ruchu, tj. nie ma zapisnego ruchu poprzedniego
-      d_y_temp = y; PrintPosToLCD("y", y); //tempy odpowiadają za pamiętanie poprzednio osiąganych 'y' i 'z'...
-      d_z_temp = z; PrintPosToLCD("z", z); //...dzięki temu program zna drogę ramienia skąd-dokąd
-      d_kp_temp = n_katPodstawa; PrintPosToLCD("kp", n_katPodstawa);
+      d_y_temp = y; LCD_pos.PrintPos("y", y); //tempy odpowiadają za pamiętanie poprzednio osiąganych 'y' i 'z'...
+      d_z_temp = z; LCD_pos.PrintPos("z", z);  //...dzięki temu program zna drogę ramienia skąd-dokąd
+      d_kp_temp = n_katPodstawa; LCD_pos.PrintPos("kp", n_katPodstawa); //PrintPosToLCD("kp", n_katPodstawa);
       b_przerywanie_petli = true; //dzięki tej zmiennej po złapaniu pozycji pierwszej i zarazem docelowej przy pierwszym ruchu program nie przechodzi bez sensu przez całą pętle ruchu, tylko...
       //...przerywa ją po 1 przejściu.
     }
@@ -435,15 +426,15 @@ void loop() //wieczna główna pętla programu
       d_z_temp += d_z_part;
       d_kp_temp += d_kp_part; //...Party (d_y_part, d_z_part, d_kp_part) są zerami w ruchu ustawczym (pierwszym)
 
-      n_y_temp = (int) d_y_temp; PrintPosToLCD("y", n_y_temp); //do obliczeń potrzebuje integerów
+      n_y_temp = (int) d_y_temp; LCD_pos.PrintPos("y", n_y_temp);  //do obliczeń potrzebuje integerów
       n_z_temp = (int) d_z_temp; //PrintPosToLCD w już zawarte poprawce pionowej
-      n_kp_temp = (int) d_kp_temp; //PrintPosToLCD("kp", n_y_temp); !!! tu ppwinno być przeliczanie na 'x' z 'kp'
+      n_kp_temp = (int) d_kp_temp; //!!! tu ppwinno być przeliczanie na 'x' z 'kp'
 
       if (i >= n_wsp_ruchu - 1) //docelowy zadany punkt. jeśli gdzieś powstałyby minimalne błędy, to tu są naprawiane
       { //... w sumie nie pamiętam co miał na celu ten warunek. pewnie jest już zbędny.
-        n_y_temp = y; PrintPosToLCD("y", n_y_temp);
+        n_y_temp = y; LCD_pos.PrintPos("y", n_y_temp); 
         n_z_temp = z; //PrintPosToLCD w poprawce pionowej
-        n_kp_temp = n_katPodstawa; //PrintPosToLCD("kp", n_y_temp); !!! tu ppwinno być przeliczanie na 'x' z 'kp'
+        n_kp_temp = n_katPodstawa; //!!! tu ppwinno być przeliczanie na 'x' z 'kp'
       }
       if (b_show_info == true)
       {
@@ -454,8 +445,8 @@ void loop() //wieczna główna pętla programu
 
       //poniżej poprawka wysokosci - niech program myśli że jego zadane wartości są idealnie odwzorywane, a realnie obliczaj i ustawiaj kąty tak, by wyszło lepiej o skompensowany...
       //...zmierzony błąd
-      n_z_temp += f_wektor_odchylek[n_y_temp - 100]; PrintPosToLCD("z", n_z_temp); //dodaj różnicę wysokości podstawy chwytaka i planszy
-      if (b_show_info == true) 
+      n_z_temp += f_wektor_odchylek[n_y_temp - 100]; LCD_pos.PrintPos("z", n_z_temp); //dodaj różnicę wysokości podstawy chwytaka i planszy
+      if (b_show_info == true)
       {
         Serial.print(", z_upgr = ");
         Serial.print(n_z_temp);
@@ -463,7 +454,7 @@ void loop() //wieczna główna pętla programu
 
       if (n_z_temp >= 236) //dla najdalszych bierek maxymalne możliwe podniesienie ramienia to 236 (dalej jest to poza polem roboczym manipulatora). powinno to być liczone w...
       { //...zalezności od możliwości, ale póki co jest to zablokowane dla wszystkich pozycji.
-        n_z_temp = 235; PrintPosToLCD("z", n_z_temp);
+        n_z_temp = 235; LCD_pos.PrintPos("z", n_z_temp); 
         //n_servo_speed = 255; //osiągnij prędkośc dla serw maxymalną, by szybko wyjść z warunku blokującego ruch (w tym przypadku serwa się nie ruszają, więc prędkość maxymalna...
         //...serw jest tylko zmienną obliczeniową by w ułamku sekundy wyjśc z funkcji delay) - coś się tu pierdoli
         if (b_show_info == true) Serial.print("!!!");
@@ -472,7 +463,7 @@ void loop() //wieczna główna pętla programu
       {
         if (n_speed_changed == 0) n_servo_speed = SERVO_SPEED;  //predkosc serw podczas normalnej pracy (polecenia 'up' i 'down' zmieniają prędkość. tutaj trzeba to naprawiać)...
         else n_servo_speed = n_speed_changed;
-        if (b_up == true || b_down == true) n_servo_speed = n_servo_speed_updown;
+        if (b_up == true || b_down == true) n_servo_speed = MOTOR_SPEED_SLOW;
       }
 
       y_kwadrat = n_y_temp * n_y_temp; //Serial.print("y^2 = "); Serial.println(y_kwadrat);
@@ -522,18 +513,19 @@ void loop() //wieczna główna pętla programu
       if (alpha <= 180 && alpha >= 0 && beta <= 157 && beta >= 24 && fi <= 180 && fi >= 45) //dopuszczalne kąty.
         //servo beta dziala w przedziale od 24 do 157 stopni. servo fi minimum 45, bo by gniotło się o ramię przed nim
       { //jeżeli wartości kątów mieszczą się w dopuszczalnych wartościach, to zezwól na ich ustalenie i kontynuuj obliczanie/ruch
-        servoA.write(n_kp_temp, n_servo_speed, false); //PrintAngleToLCD("servoA"); tutaj to nie zadziala. musi być warunek dla n_kp_temp
-        servoB.write(alpha, n_servo_speed, false); PrintAngleToLCD("servoB");
-        servoC.write(beta, n_servo_speed, false); PrintAngleToLCD("servoC");
-        servoD.write(fi + n_fi_poprawka, 35, true); PrintAngleToLCD("servoD"); //bardzo problematyczne jest ustawić kąt mechanicznie. zmieniam o n_fi_poprawka stopni do fi zawsze by wyszło tyle ile jest założone.
+        servoA.ustaw_kat(n_kp_temp, static_cast<MOTOR_SPEED>(n_servo_speed)); /*servoA.write(n_kp_temp, n_servo_speed, false);*/ //tutaj to nie zadziala. musi być warunek dla n_kp_temp
+        servoB.ustaw_kat(alpha, static_cast<MOTOR_SPEED>(n_servo_speed)); LCD_angle.PrintAngle("servoB", servoB.Kat()); 
+        servoC.ustaw_kat(beta, static_cast<MOTOR_SPEED>(n_servo_speed)); LCD_angle.PrintAngle("servoC", servoC.Kat()); 
+        //bardzo problematyczne jest ustawić kąt mechanicznie. zmieniam o n_fi_poprawka stopni do fi zawsze by wyszło tyle ile jest założone.
+        servoD.ustaw_kat(fi + n_fi_poprawka, static_cast<MOTOR_SPEED>(n_servo_speed)); LCD_angle.PrintAngle("servoD", servoD.Kat()); //!!!z jakis powodow tutaj predkosc ustawiona jest na 35
       }
       else //jeżeli kąt wyskoczył poza dopuszczalne wartości, to ustaw bezpieczne wartości, pokaż gdzie był błąd w zmiennych i wyjdź z pętli
       {
         Serial.println("ERROR: Kat poza zakresem. Przerwanie ruchu i wyjscie z petli.");
-        servoA.write(90, n_servo_speed, false); PrintAngleToLCD("servoA");
-        servoB.write(90, n_servo_speed, false); PrintAngleToLCD("servoB");
-        servoC.write(90, n_servo_speed, false); PrintAngleToLCD("servoC");
-        servoD.write(90, n_servo_speed, false); PrintAngleToLCD("servoD");
+        servoA.ustaw_kat(90, static_cast<MOTOR_SPEED>(n_servo_speed)); LCD_angle.PrintAngle("servoA", servoA.Kat()); 
+        servoB.ustaw_kat(90, static_cast<MOTOR_SPEED>(n_servo_speed)); LCD_angle.PrintAngle("servoB", servoB.Kat()); 
+        servoC.ustaw_kat(90, static_cast<MOTOR_SPEED>(n_servo_speed)); LCD_angle.PrintAngle("servoC", servoC.Kat()); 
+        servoD.ustaw_kat(90, static_cast<MOTOR_SPEED>(n_servo_speed)); LCD_angle.PrintAngle("servoD", servoD.Kat()); 
         //pokaz gdzie sie program wykrzaczyl na obliczeniach
         Serial.print("z0 = "); Serial.println(z0);
         Serial.print("z0^2 = "); Serial.println(z0_kwadrat); //pokaz gdzie sie program wykrzaczyl na obliczeniach
@@ -546,7 +538,7 @@ void loop() //wieczna główna pętla programu
         Serial.print("pre_beta_rad= "); Serial.println(pre_beta_rad);
         Serial.print("beta_rad= "); Serial.println(beta_rad);
         n_katPodstawa = 90; alpha = 90; beta = 90; fi = 90; y = b; z = z1 + a; //wartości jak z 'reset'
-        PrintPosToLCD("y", y); PrintPosToLCD("z", z);
+        LCD_pos.PrintPos("y", y); LCD_pos.PrintPos("z", z); 
         i = n_wsp_ruchu - 1; //po tym wyjdź z petli
       }
 
@@ -568,27 +560,27 @@ void loop() //wieczna główna pętla programu
 
     if (b_up == true && b_sekwencja_ruchow == true) //jeżeli łapa się podniosła podczas rozgrywania partii szachów, to podnieś łapę maxymalnie nad bierki...
     { //...poprzez danie maxymalnego kąta fi (wyprostowanie ramienia)
-      servoD.write(179, 70, true); //parametr true powinien wykonać najpierw podniesienie zanim kod ruszy dalej
+      servoD.ustaw_kat(179, MOTOR_SPEED_FAST, true); //parametr true powinien wykonać najpierw podniesienie zanim kod ruszy dalej
       delay(10); //nie wiem czemu to służy, ale używane tego przy wartości true na tutorialu, więc nie zaszkodzi
-      PrintAngleToLCD("servoD");
+      LCD_angle.PrintAngle("servoD", servoD.Kat()); 
     }
     else if (b_down == false) //po przeniesieniu się nad planszą ustaw sobie już kąt do zejścia po bierkę
     {
       fi = 270 - alpha - beta;
-      servoD.write(fi + n_fi_poprawka, 70, false);
-      PrintAngleToLCD("servoD");
+      servoD.ustaw_kat(fi + n_fi_poprawka, MOTOR_SPEED_FAST); 
+      LCD_angle.PrintAngle("servoD", servoD.Kat()); 
     }
 
     if (b_sekwencja_ruchow == true) //jeżeli mieliśmy do czynienia z ruchem generowanym z gry/ze strony...
     {
       if (Str_move_case == "armUp2") //... i jeżeli był to ostatni ruch z sekwencji przemieszczania pionka...
       {
-        servoA.write(110, n_servo_speed, false); PrintAngleToLCD("servoA"); //... to serwem podstawy ustaw się na środku planszy ...
+        servoA.ustaw_kat(110, static_cast<MOTOR_SPEED>(n_servo_speed)); LCD_angle.PrintAngle("servoA", servoA.Kat());  //... to serwem podstawy ustaw się na środku planszy ...
         b_sekwencja_ruchow = false; //... i nie wykonuj już więcej funkcji związanym z grą na stronie WWW...
       }
       //... a na końcu wyślij do core informację o tym jaki żądany ruch z core'a został wykonany:
       // jeżeli żądanie ruchu zawierało pole nad które miała się łapa ruszyć, to do informacji zwrotnej dopisz też informację o tym jakie to było pole (zbędna ochrona)...
-      if (Str_move_case.substring(2, 7) == "moved") //(Str_move_case == "movedFrom" || Str_move_case == "movedTo" || Str_move_case == "movedToR")
+      if (Str_move_case.substring(2, 7) == "moved") 
       {
         String Str_sqare = " " + (String)Str_litera_pola + (String)n_wsp_n;
         AnswerToCore(Str_move_case, Str_sqare);
@@ -597,10 +589,10 @@ void loop() //wieczna główna pętla programu
       // !!w rdzeniu (core) mam stare ustawienia wg których każda wiadomość kończy się dolarem. zobaczyć czy to coś psuje (nie widać by coś się złego działo).
     }
 
-    if (b_down == false && Str_move_case != "trashedR") //jeżeli funkcja nie wykonywała ruchu typu down ani usuwania bierki
+    if (b_down == false && Str_move_case != "r_trashed") //jeżeli funkcja nie wykonywała ruchu typu down ani usuwania bierki
     { // warunek aby nie wywracało bierek skrajnych
       alpha += 8;
-      servoB.write(alpha, 6, true); PrintAngleToLCD("servoB");
+      servoB.ustaw_kat(alpha, static_cast<MOTOR_SPEED>(n_servo_speed), true); LCD_angle.PrintAngle("servoB", servoB.Kat()); //servoB.write(alpha, 6, true); PrintAngleToLCD("servoB"); //!! z powodu jakiegos bledu bylo tu ustawione predkosc 6, by bledu nie bylo widac
     }
 
     /*czyszczenie zmiennych*/
@@ -624,114 +616,20 @@ void AnswerToCore(String Str_msg1, String Str_msg2)
   }
 }
 
-void PrintAngleToLCD(String Str_servo)
-{
-  int n_row, n_column, n_kat;
-  if (Str_servo == "servoA")
-  {
-    n_row = 0;
-    n_column = 0;
-    n_kat = (int) n_katPodstawa;
-  }
-  else if (Str_servo == "servoB")
-  {
-    n_row = 6;
-    n_column = 0;
-    n_kat = (int) alpha;
-  }
-  else if (Str_servo == "servoC")
-  {
-    n_row = 12;
-    n_column = 0;
-    n_kat = (int) beta;
-  }
-  else if (Str_servo == "servoD")
-  {
-    n_row = 0;
-    n_column = 1;
-    n_kat = (int) fi;
-  }
-  else if (Str_servo == "servoE")
-  {
-    n_row = 6;
-    n_column = 1;
-    n_kat = (int) n_katSzczeki;
-  }
-  else if (Str_servo == "servoF")
-  {
-    n_row = 12;
-    n_column = 1;
-    n_kat = (int) n_wsp_ks2 - n_katSzczeki;
-  }
 
-  lcd1.setCursor(n_row, n_column);
-  lcd1.print(Str_servo.substring(5, 6));
-  lcd1.setCursor(n_row + 1, n_column);
-  if (n_kat >= 100) lcd1.print(n_kat);
-  else //kwestie kosmetyczne na wyświetlaczu
-  {
-    lcd1.print("0");
-    lcd1.setCursor(n_row + 2, n_column);
-    if (n_kat >= 10) lcd1.print(n_kat);
-    else
-    {
-      lcd1.print("0");
-      lcd1.setCursor(n_row + 3, n_column);
-      lcd1.print(n_kat);
-    }
-  }
-}
-
-void PrintPosToLCD(String Str_pos, int n_axis_pos)
-{
-  int n_row;
-  if (Str_pos == "x" || Str_pos == "X")
-  {
-    Str_pos = "X=";
-    n_row = 0;
-  }
-  else if (Str_pos == "y" || Str_pos == "Y")
-  {
-    Str_pos = "Y=";
-    n_row = 6;
-  }
-  else if (Str_pos == "z" || Str_pos == "Z")
-  {
-    Str_pos = "Z=";
-    n_row = 12;
-  }
-
-  lcd2.setCursor(n_row, 0);
-  lcd2.print(Str_pos);
-  lcd2.setCursor(n_row + 2, 0);
-  if (n_axis_pos == -1) lcd2.print("???"); //jeżeli pozycja nie jest znana, bo nie jest liczona (np. podczas podawania kąta bezpośrednio na serwo), to wyświetlaj "???"
-  else if (n_axis_pos >= 100) lcd2.print(n_axis_pos);
-  else
-  {
-    lcd2.print("0");
-    lcd2.setCursor(n_row + 3, 0);
-    if (n_axis_pos >= 10) lcd2.print(n_axis_pos);
-    else
-    {
-      lcd2.print("0");
-      lcd2.setCursor(n_row + 4, 0);
-      lcd2.print(n_axis_pos);
-    }
-  }
-}
 
 void Open()
 {
   n_katSzczeki = 102;
-  servoE.write(n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoE");
-  servoF.write(n_wsp_ks2 - n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoF");
-  if (b_show_info == true) 
+  servoE.ustaw_kat(n_katSzczeki, static_cast<MOTOR_SPEED>(n_servo_speed)); LCD_angle.PrintAngle("servoE", servoE.Kat()); 
+  servoF.ustaw_kat(200 - n_katSzczeki, static_cast<MOTOR_SPEED>(n_servo_speed)); LCD_angle.PrintAngle("servoF", servoF.Kat()); 
+  if (b_show_info == true)
   {
     Serial.print("opened. katSzczeki = ");
     Serial.println(n_katSzczeki);
   }
   //poniżej warunki gdy jest wykonywany oficjalny ruch bierki podczas rozgrywki
-  if (coreCommand.substring(0, 7) == "n_open1" && b_sekwencja_ruchow == true) AnswerToCore("", "n_opened1"); 
+  if (coreCommand.substring(0, 7) == "n_open1" && b_sekwencja_ruchow == true) AnswerToCore("", "n_opened1");
   else if (coreCommand.substring(0, 7) == "n_open2" && b_sekwencja_ruchow == true) AnswerToCore("", "n_opened2");
   else if (coreCommand.substring(0, 7) == "r_open1" && b_sekwencja_ruchow == true) AnswerToCore("", "r_opened1");
   else if (coreCommand.substring(0, 7) == "r_open2" && b_sekwencja_ruchow == true) AnswerToCore("", "r_opened2");
@@ -744,9 +642,9 @@ void Open()
 void Close()
 {
   n_katSzczeki = 83;
-  servoE.write(n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoE");
-  servoF.write(n_wsp_ks2 - n_katSzczeki, n_servo_speed, false); PrintAngleToLCD("servoF");
-  if (b_show_info == true) 
+  servoE.ustaw_kat(n_katSzczeki, static_cast<MOTOR_SPEED>(n_servo_speed)); LCD_angle.PrintAngle("servoE", servoE.Kat()); 
+  servoF.ustaw_kat(200 - n_katSzczeki, static_cast<MOTOR_SPEED>(n_servo_speed)); LCD_angle.PrintAngle("servoF", servoF.Kat());
+  if (b_show_info == true)
   {
     Serial.print("closed. katSzczeki = ");
     Serial.println(n_katSzczeki);
@@ -762,7 +660,7 @@ void Up()
 {
   b_up = true;
   z = 230; //jedna z 2 możliwych 'z' możliwych docelowo do osiągnięcia w programie (inne są zbędne)
-  n_servo_speed = n_servo_speed_updown; //predkosc serw podczas podnoszenia od planszy
+  n_servo_speed = MOTOR_SPEED_SLOW; //predkosc serw podczas podnoszenia od planszy
   if (b_show_info == true)
   {
     Serial.print("up: ");
@@ -775,7 +673,7 @@ void Down()
 {
   b_down = true;
   z = 158; //jw. w 'up'
-  n_servo_speed = n_servo_speed_updown; //predkosc serw podczas opadania ku planszy
+  n_servo_speed = MOTOR_SPEED_SLOW; //predkosc serw podczas opadania ku planszy
   if (b_show_info == true)
   {
     Serial.println("down: ");
@@ -785,19 +683,19 @@ void Down()
 }
 
 void Trash()
-{
-    n_katPodstawa = 175; //ustaw podstawe nad pundełkiem na zbite bierki...
-    servoA.write(n_katPodstawa, 18, false); PrintAngleToLCD("servoA"); PrintPosToLCD("x", -1); //speed ustawiony na sztywno
-    coreCommand = "(170,240)"; //...i wyceluj tam na płaszczyźnie (y,z).
-    Str_move_case = "r_trashed";
-}
+  {
+  n_katPodstawa = 175; //ustaw podstawe nad pundełkiem na zbite bierki...
+  servoA.ustaw_kat(n_katPodstawa); LCD_angle.PrintAngle("servoA", servoA.Kat()); LCD_pos.PrintPos("x", -1); //speed ustawiony na sztywno
+  coreCommand = "(170,240)"; //...i wyceluj tam na płaszczyźnie (y,z).
+  Str_move_case = "r_trashed";
+  }
 
 void PrepareAnswer()
 {
 
   if (coreCommand.substring(5, 7) == "]f") //jeżeli wiadomość to np. [a2]f to arduino rozpoczyna wymianę danych z core'm
-  //wiadomość oznacza żądanie przeniesienia pionka "z pozycji (f-from)". w tym ruchu ustawiane jest ramie w pukncie P nad pionkiem do podniesienia.
-  { 
+    //wiadomość oznacza żądanie przeniesienia pionka "z pozycji (f-from)". w tym ruchu ustawiane jest ramie w pukncie P nad pionkiem do podniesienia.
+  {
     b_show_info = false; //na wszelki wypadek wyłącz pokazywanie innych informacji (rozwaliły by komunikację)
     b_sekwencja_ruchow = true; //rozpoczęto rozmowe z core'm, więc niektóre ruchy wykonywać mają się trochę inaczej
     if (coreCommand.substring(0, 2) == "c_" && coreCommand.substring(6, 7) == "K") Str_move_case = "c_movedFrom1";
@@ -805,22 +703,22 @@ void PrepareAnswer()
     else Str_move_case = "n_movedFrom"; //zostaje ustawiona zmienna, która po wykonaniu ruchu przez łapę zostanie wysłana core, jako potwierdzenie tego co miało się wykonać (i czekanie na...
     //...kolejny sygnał z sekwencji ruchów
   }
-  
+
   else if (coreCommand.substring(5, 7) == "]t")
   {
     if (coreCommand.substring(0, 2) == "c_" && coreCommand.substring(6, 7) == "K") Str_move_case = "c_movedToK";
     else if (coreCommand.substring(0, 2) == "c_" && coreCommand.substring(6, 7) == "R") Str_move_case = "c_movedToR";
-    else Str_move_case = "n_movedTo"; 
+    else Str_move_case = "n_movedTo";
   }
-  
-  else if (coreCommand.substring(0, 7) == "n_down1") Str_move_case = "n_armDown1"; 
+
+  else if (coreCommand.substring(0, 7) == "n_down1") Str_move_case = "n_armDown1";
   else if (coreCommand.substring(0, 5) == "n_up1") Str_move_case = "n_armUp1";
-  else if (coreCommand.substring(0, 7) == "n_down2") Str_move_case = "n_armDown2"; 
-  else if (coreCommand.substring(0, 5) == "n_up2") Str_move_case = "n_armUp2"; 
+  else if (coreCommand.substring(0, 7) == "n_down2") Str_move_case = "n_armDown2";
+  else if (coreCommand.substring(0, 5) == "n_up2") Str_move_case = "n_armUp2";
 
   //usuwanie pionków z planszy:
   else if (coreCommand.substring(0, 2) == "r_") //sekwencja poprzedza zwykłe przemieszczanie bierki. ma to miejsce, gdy bierka ma wylądować na polu na którym jest bierka wroga.
-  //o tym czy na bitym polu na pewno jest bierka wroga decyduje program szachowy, który przed ruchami arduino bada czy ruch może być wykonany.
+    //o tym czy na bitym polu na pewno jest bierka wroga decyduje program szachowy, który przed ruchami arduino bada czy ruch może być wykonany.
   {
     b_show_info = false;
     b_sekwencja_ruchow = true;
