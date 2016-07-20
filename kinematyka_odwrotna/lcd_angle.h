@@ -25,9 +25,6 @@ class cLCD_angle
 
     // metody
     void PrintAngle(String sServo, float fKat); //kąt trzeba wrzucić metodą dostępową obiektu od klasy silnika
-    //------------------------------------------------------
-    
-    // metody dostępowe do pól
 };
 
 #endif
