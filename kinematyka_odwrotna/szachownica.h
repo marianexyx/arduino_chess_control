@@ -30,20 +30,18 @@ class cSzachownica
 
 
   public:
-    // konstruktory
+    //----------------------------------------------------------KONSTRUKTOR----------------------------------------------------------//
     cSzachownica(cKomunikacja* pKomunikacja, cLCD_pos* pLCD_pos);
-    // -----------------------------------------------------
 
-    // metody
+    //------------------------------------------------------------METODY-------------------------------------------------------------//
     void OkreslLiterePola(String sPolecenieRdzenia);
     void OkreslCyfrePola(String sPolecenieRdzenia);
     int ObliczKatPodstawy(); // ??? obliczaniem tego powinna zająć się klasa "silnik" ???
     unsigned long Oblicz_y(); // ??? obliczaniem tego powinna zająć się klasa "ramie" ???
-    // -----------------------------------------------------
 
-    // metody dostępowe do pól
+    //----------------------------------------------------METODY-DOSTĘPOWE-DO-PÓL----------------------------------------------------//
     String getLiteraPola() const                        { return _sLiteraPola; }
-    String getCyfraPola() const                        { return _sCyfraPola; }
+    String getCyfraPola() const                         { return _sCyfraPola; }
 };
 
 #endif

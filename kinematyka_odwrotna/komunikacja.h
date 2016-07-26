@@ -28,19 +28,17 @@ class cKomunikacja
     bool _bSekwencjaRuchow; //definiuje czy ruch jest spowodowany ręcznie (false), czy przez core (true). wartości core'a zmieniają tą zmienną.
     
   public:
-    // konstruktor
+    //----------------------------------------------------------KONSTRUKTOR----------------------------------------------------------//
     cKomunikacja(); // ustawi pokazywanie info automatycznie na false
-    // -----------------------------------------------------
 
-    // metody
+    //------------------------------------------------------------METODY-------------------------------------------------------------//
     void PrzygotujOdpowiedzNaRdzen(String sPolecenieRdzenia);
     void PokazInfo(INFO_TYPE typInformacji, String sZmiennaDoPokazania);
     void OdpowiedzNaRdzen(String sMsgPart);
     void OdpowiedzNaRdzen(String sMsgPart1, String sMsgPart2);
     void ServoPozaZakresem();
-    //------------------------------------------------------
 
-    // metody dostępowe do pól
+    //----------------------------------------------------METODY-DOSTĘPOWE-DO-PÓL----------------------------------------------------//
     bool CzyPokazujeInfo() const                             { return _bPokazujeInfo; }
     String InfoDlaRdzenia() const                            { return _sInfoDlaRdzenia; }
     bool getSekwencjaRuchow() const                          { return _bSekwencjaRuchow; }

@@ -15,17 +15,15 @@ class cSerwis
     cSilnik* _pSilnik;
     
   public:
-    // konstruktory
+    //----------------------------------------------------------KONSTRUKTOR----------------------------------------------------------//
     cSerwis(cKomunikacja* pKomunikacja, cSilnik* pSilnik); 
-    // -----------------------------------------------------
 
-    // metody
+    //------------------------------------------------------------METODY-------------------------------------------------------------//
     void ZmienPredkosc(String sKomendaRdzenia);
     void WlaczSerwa();
     void WylaczSerwa();
     void WlaczInfo();
     void WylaczInfo();
-    //------------------------------------------------------
 };
 
 #endif

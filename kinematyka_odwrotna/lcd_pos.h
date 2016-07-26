@@ -11,7 +11,7 @@ class cLCD_pos
     LiquidCrystal* _pLCD_pos;
 
   public:
-    // konstruktory
+    //----------------------------------------------------------KONSTRUKTORY---------------------------------------------------------//
     cLCD_pos()  {}
     cLCD_pos(int nRS_pin, int nEnable_pin, int nD4_pin, int nD5_pin, int nD6_pin, int nD7_pin, int nLcdWidth, int nLcdHeight)  
     {
@@ -19,13 +19,9 @@ class cLCD_pos
       _pLCD_pos->begin(nLcdWidth, nLcdHeight);
       _pLCD_pos->clear();
     }
-    //-----------------------------------------------------
-
-    // metody
-    void PrintPos(String sPosition, int nAxisPosition);
-    //------------------------------------------------------
     
-    // metody dostępowe do pól
+    //------------------------------------------------------------METODY-------------------------------------------------------------//
+    void PrintPos(String sPosition, int nAxisPosition);
 };
 
 #endif

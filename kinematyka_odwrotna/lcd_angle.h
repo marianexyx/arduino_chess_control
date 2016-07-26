@@ -13,7 +13,7 @@ class cLCD_angle
     int _nKat;
   
   public:
-    // konstruktory
+    //----------------------------------------------------------KONSTRUKTOR----------------------------------------------------------//
     cLCD_angle()  {}
     cLCD_angle(int nRS_pin, int nEnable_pin, int nD4_pin, int nD5_pin, int nD6_pin, int nD7_pin, int nLcdWidth, int nLcdHeigh)  
     {
@@ -21,9 +21,8 @@ class cLCD_angle
       _pLCD_angle->begin(nLcdWidth, nLcdHeigh);
       _pLCD_angle->clear();
     }
-    //-----------------------------------------------------
-
-    // metody
+    
+    //------------------------------------------------------------METODY-------------------------------------------------------------//
     void PrintAngle(String sServo, float fKat); //kąt trzeba wrzucić metodą dostępową obiektu od klasy silnika
 };
 

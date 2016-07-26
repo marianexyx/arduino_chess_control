@@ -1,9 +1,3 @@
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//cała ta klasa to straszliwa lipa. powinna być ona klasą wirtualną, a każdy silnik powinien być osobną klasą z przesłanianiem metod pod 
-//siebie, a nie tak jak teraz osobnym obiektem. nie da rady zrobić tego na arduino ide, jako że nie zmieszczę się w pasku zakładek. póki 
-//tego nie zmienię, to tak to musi być
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 #ifndef silnik_h
 #define silnik_h
 
@@ -12,17 +6,16 @@
 #include <LiquidCrystal.h>
 #include "lcd_angle.h"
 #include "lcd_pos.h"
+#include "komunikacja.h"
 
 enum MOTOR_SPEED { MOTOR_SPEED_SLOW  = 2, MOTOR_SPEED_NORMAL = 18, MOTOR_SPEED_FAST  = 70, MOTOR_SPEED_MAX   = 255 };
 
 class cLCD_angle;
 
 class cSilnik
-{
-  private:
+{    
+  protected:
     int _nPin;
-    String _sNazwaServa;
-    String _sNazwaKata;
     int _nPredkosc;
     float _fKat; 
     float _fKatMin;
@@ -32,30 +25,21 @@ class cSilnik
     cLCD_pos* _pLCD_pos;
     
  public:
-    // konstruktory
+    //----------------------------------------------------------KONSTRUKTORY---------------------------------------------------------//
     cSilnik() {} //dla dziedziczenia
-    cSilnik(int nPin, String sNazwaServa, String sNazwaKata, float fKatMin, float fKatMax, cLCD_angle* pLCD_angle, cLCD_pos* pLCD_pos);
-    // -----------------------------------------------------
+    cSilnik(int nPin, float fKatMin, float fKatMax, cLCD_angle* pLCD_angle, cLCD_pos* pLCD_pos);
 
-    // metody
+    //------------------------------------------------------------METODY-------------------------------------------------------------//
     void Rozpocznij();
-    void UstawKat(float fKat);  //podstawowy ruch - predkosc normalna, automatyczny false
     void UstawKat(float fKat, MOTOR_SPEED predkoscSilnika);    //podstawowy ruch - automatyczny false
     void UstawKat(float fKat, MOTOR_SPEED predkoscSilnika, bool bCzekajNaKoniecRuchu);  //podstawowy ruch - w domysle do wrzucania true
-    void PodniesPrewencyjnie(bool bOpuszczono, String sCoreAnswer, int nAlpha);  //prewencyjne odsunięcie od planszy
-    void PrzygotujFi(bool bPozycjaGorna, bool bPozycjaDolna, bool bSekwencjaRuchow, double dFi, int nFiPoprawka, double dAlpha, double dBeta); //prepare fi motor
-    void UstawKatSerwisowo(String sNazwaKata, String sKat); // serwisowealpha beta ks fi   
-    int ObliczKatAlfa();
-    int ObliczKatBeta();
-    int ObliczKatFi();
-    //------------------------------------------------------
+    void UstawKatSerwisowo(String sNazwaKata, String sKat); // serwisowe alpha beta ks fi   
     
-    // metody dostępowe do pól
-    float Kat() const                           { return _fKat; }
-    int Predkosc() const                        { return _nPredkosc; }
-    String NazwaKata() const                    { return _sNazwaKata; }
-    int KatMin() const                          { return _fKatMin; }
-    int KatMax() const                          { return _fKatMax; }
+    //----------------------------------------------------METODY-DOSTĘPOWE-DO-PÓL----------------------------------------------------//
+    float getKat() const                           { return _fKat; }
+    int getPredkosc() const                        { return _nPredkosc; }
+    int getKatMin() const                          { return _fKatMin; }
+    int getKatMax() const                          { return _fKatMax; }
 
     void setPredkosc(MOTOR_SPEED predkoscSilnika)  { _nPredkosc = predkoscSilnika; } 
 };
