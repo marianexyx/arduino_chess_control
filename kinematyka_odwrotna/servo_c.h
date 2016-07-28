@@ -13,7 +13,6 @@
 class cServoC : public cSilnik
 {
   private: //wskazniki LCD sa dziedziczone
-    cKomunikacja* _pKomunikacja;
 
   public:
     //----------------------------------------------------------KONSTRUKTOR----------------------------------------------------------//
@@ -23,20 +22,21 @@ class cServoC : public cSilnik
       _fKatMin = fKatMin;
       _fKatMax = fKatMax;
       _pLCD_angle = pLCD_angle;
-      _pKomunikacja = pKomunikacja
+      _nPredkosc = MOTOR_SPEED_NORMAL;
+      _pKomunikacja = pKomunikacja;
     }
 
     //------------------------------------------------------------METODY-------------------------------------------------------------//
     //servo beta dziala w przedziale od 24 do 157 stopni. 
     
-    void ObliczKatBeta(double dL, double dA, double dB)
-    {
+    void ObliczKatBeta(double dL, double dA, double dB, cKomunikacja* pKomunikacja)
+    {  
       double dBetaRad = acos((dA * dA + dB * dB - dL * dL) / (2 * dA * dB)); //obliczanie bety w radianach
       _fKat = (180 / PI) * dBetaRad; //kąt beta docelowy.
 
       if (_fKat >= 157) _fKat = 156; //!!servo beta ma słaby zakres!!!
 
-      _pKomunikacja->PokazInfo(INFO_KAT_BETA, (String)_fKat);
+      pKomunikacja->PokazInfo(INFO_KAT_BETA, (String)_fKat);
     }
 };
 

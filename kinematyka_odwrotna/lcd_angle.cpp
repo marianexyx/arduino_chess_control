@@ -3,12 +3,30 @@
 
 void cLCD_angle::PrintAngle(String sServo, float fKat) //rozwiązanie przy założeniu że zawsze pilnuję jaki kąt wrzucam
 {
-  if (sServo == "servoA") {_nRow = 0; _nColumn = 0; }
-  else if (sServo == "servoB") { _nRow = 6; _nColumn = 0; }
-  else if (sServo == "servoC") { _nRow = 12; _nColumn = 0; }
-  else if (sServo == "servoD") { _nRow = 0; _nColumn = 1; }
-  else if (sServo == "servoE") { _nRow = 6; _nColumn = 1; }
-  else if (sServo == "servoF") { _nRow = 12; _nColumn = 1; }
+  if (sServo == "ServoA_kp") {
+    _nRow = 0;
+    _nColumn = 0;
+  }
+  else if (sServo == "ServoB_alpha") {
+    _nRow = 6;
+    _nColumn = 0;
+  }
+  else if (sServo == "ServoC_beta") {
+    _nRow = 12;
+    _nColumn = 0;
+  }
+  else if (sServo == "ServoD_fi") {
+    _nRow = 0;
+    _nColumn = 1;
+  }
+  else if (sServo == "ServoE_ks1") {
+    _nRow = 6;
+    _nColumn = 1;
+  }
+  else if (sServo == "ServoF_ks2") {
+    _nRow = 12;
+    _nColumn = 1;
+  }
   _nKat = (int) fKat;
 
   _pLCD_angle->setCursor(_nRow, _nColumn);

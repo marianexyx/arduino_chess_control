@@ -16,13 +16,15 @@ class cServoA : public cSilnik
 
   public:
     //----------------------------------------------------------KONSTRUKTOR-------------------------------------------------------------//
-    cServoA(int nPin, float fKatMin, float fKatMax, cLCD_angle* pLCD_angle, cLCD_pos* pLCD_pos)
+    cServoA(int nPin, float fKatMin, float fKatMax, cLCD_angle* pLCD_angle, cLCD_pos* pLCD_pos, cKomunikacja* pKomunikacja)
     {
       _nPin = nPin;
       _fKatMin = fKatMin;
       _fKatMax = fKatMax;
       _pLCD_angle = pLCD_angle;
       _pLCD_pos = pLCD_pos;
+      _nPredkosc = MOTOR_SPEED_NORMAL;
+       _pKomunikacja = pKomunikacja;
 
       _dKPpart = 0;
       _dKPtemp = 0;

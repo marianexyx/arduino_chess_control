@@ -1,42 +1,68 @@
 //-------------------------------------------------------------FUNKCJE-------------------------------------------------------------//
+void SprawdzTypPolecenia(String sKomendaRdzenia)
+{
+  static enum CORE_COMMAND { CC_RESET, CC_UP, CC_DOWN, CC_SPEED, CC_TURNON, CC_TURNOFF, CC_INFOON, CC_INFOOFF, CC_KP, CC_ALPHA, CC_BETA, CC_FI, CC_KS, CC_OPEN, CC_CLOSE, CC_TRASH, CC_YZ, CC_XYZ, CC_XY, CC_ELSE };
+  CORE_COMMAND KomendaRdzenia;
+  if (sKomendaRdzenia.substring(0, 5) == "reset") KomendaRdzenia = CC_RESET;
+  else if (sKomendaRdzenia.substring(2, 4) == "up") KomendaRdzenia = CC_UP;
+  else if (sKomendaRdzenia.substring(2, 6) == "down") KomendaRdzenia = CC_DOWN;
+  else if (sKomendaRdzenia.substring(0, 7) == "speed =") KomendaRdzenia = CC_SPEED;
+  else if (sKomendaRdzenia.substring(0, 7) == "turn on") KomendaRdzenia = CC_TURNON;
+  else if (sKomendaRdzenia.substring(0, 8) == "turn off") KomendaRdzenia = CC_TURNOFF;
+  else if (sKomendaRdzenia.substring(0, 7) == "info on") KomendaRdzenia = CC_INFOON;
+  else if (sKomendaRdzenia.substring(0, 8) == "info off") KomendaRdzenia = CC_INFOOFF;
+  else if (sKomendaRdzenia.substring(0, 4) == "kp =") KomendaRdzenia = CC_KP;
+  else if (sKomendaRdzenia.substring(0, 7) == "alpha =") KomendaRdzenia = CC_ALPHA;
+  else if (sKomendaRdzenia.substring(0, 6) == "beta =") KomendaRdzenia = CC_BETA;
+  else if (sKomendaRdzenia.substring(0, 4) == "fi =") KomendaRdzenia = CC_FI;
+  else if (sKomendaRdzenia.substring(0, 4) == "ks =") KomendaRdzenia = CC_KS;
+  else if (sKomendaRdzenia.substring(2, 6) == "open") KomendaRdzenia = CC_OPEN;
+  else if (sKomendaRdzenia.substring(2, 7) == "close") KomendaRdzenia = CC_CLOSE;
+  else if (sKomendaRdzenia.substring(2, 7) == "trash") KomendaRdzenia = CC_TRASH;
+  else if (sKomendaRdzenia.substring(0, 1) == "(" && sCoreCommand.substring(8, 9) == ")") KomendaRdzenia = CC_YZ;
+  else if (sKomendaRdzenia.substring(0, 1) == "(" && sCoreCommand.substring(11, 12) == ")") KomendaRdzenia = CC_XYZ;
+  else if (sKomendaRdzenia.substring(2, 3) == "[" && sCoreCommand.substring(5, 6) == "]") KomendaRdzenia = CC_XY;
+  else KomendaRdzenia = CC_ELSE;
+}
+
 void DodajDoPunktuPCzescRuchuRamienia()
 {
   //do obliczeń potrzebuje integerów
   Ramie.ZwiekszYpartTempem(); LCD_pos.PrintPos("y", Ramie.getYtemp() );   //od ostatniej pozycji powoli jedź do nowej podanej
   Ramie.ZwiekszZpartTempem(); //PrintPosToLCD w już zawarte poprawce pionowej
-  servoA.ZwiekszKPpartTempem(); //!!! tu ppwinno być przeliczanie na 'x' z 'kp'
+  ServoA_kp.ZwiekszKPpartTempem(); //!!! tu ppwinno być przeliczanie na 'x' z 'kp'
   //Party (dYpart, dZpart, dKPpart) są zerami w ruchu ustawczym (pierwszym)
 }
 
 void WyrownanieTempowPoDodaniuOstatnichPartow()
 {
-  if (i >= n_wsp_ruchu - 1) //docelowy zadany punkt. jeśli gdzieś powstałyby minimalne błędy, to tu są naprawiane
+  if (i >= nWspRuchu - 1) //docelowy zadany punkt. jeśli gdzieś powstałyby minimalne błędy, to tu są naprawiane
   { //... w sumie nie pamiętam co miał na celu ten warunek. pewnie jest już zbędny.
     Ramie.setYtemp( Ramie.getY() ); LCD_pos.PrintPos("y", Ramie.getYtemp() );
     Ramie.setZtemp( Ramie.getZ() ); //PrintPosToLCD w poprawce pionowej
-    servoA.setKPtemp( servoA.getKat() ); //!!! tu ppwinno być przeliczanie na 'x' z 'kp'
+    ServoA_kp.setKPtemp( ServoA_kp.getKat() ); //!!! tu ppwinno być przeliczanie na 'x' z 'kp'
 
     Komunikaty.PokazInfo(INFO_ODLEGLOSC_Y, (String)Ramie.getYtemp() );
     Komunikaty.PokazInfo(INFO_ODLEGLOSC_Z, (String)Ramie.getZtemp() );
-    Komunikaty.PokazInfo(INFO_KAT_KP, (String)servoA.getKPtemp() );
+    Komunikaty.PokazInfo(INFO_KAT_KP, (String)ServoA_kp.getKPtemp() );
   }
 }
 
 void ObliczPartyPrzemieszczenia()
 {
-  if (Ramie.getYtemp() == 0 || Ramie.getZtemp() == 0 || servoA.getKPtemp() == 0) //jeżeli nie było jeszcze żadnego przejścia przez pętle ruchu (tj. nie ma zapisnego ruchu poprzedniego) to tempy są zerami
+  if (Ramie.getYtemp() == 0 || Ramie.getZtemp() == 0 || ServoA_kp.getKPtemp() == 0) //jeżeli nie było jeszcze żadnego przejścia przez pętle ruchu (tj. nie ma zapisnego ruchu poprzedniego) to tempy są zerami
   {
     Ramie.setYtemp(Ramie.getY() ); LCD_pos.PrintPos("y", Ramie.getY() ); //tempy odpowiadają za pamiętanie poprzednio osiąganych 'y' i 'z'...
     Ramie.setYtemp(Ramie.getZ() ); LCD_pos.PrintPos("z", Ramie.getZ() );  //...dzięki temu program zna drogę ramienia skąd-dokąd
-    servoA.setKPtemp(servoA.getKat() ); LCD_pos.PrintPos("kp", servoA.getKat() );
+    ServoA_kp.setKPtemp(ServoA_kp.getKat() ); LCD_pos.PrintPos("kp", ServoA_kp.getKat() );
     bPrzerwaniePetli = true; //dzięki tej zmiennej po złapaniu pozycji pierwszej i zarazem docelowej przy pierwszym ruchu program nie przechodzi bez sensu przez całą pętle ruchu, tylko...
     //...przerywa ją po 1 przejściu.
   }
   else  //dla każdego normalnego podanego ruchu oblicz części ruchu do dodawania w pętli ruchu
   {
-    Ramie.setYpart ( (Ramie.getY() - Ramie.getYtemp() ) / nWspRuchu ); // floaty. minusowe wartosci dla zmiennej, jezeli punkt jest "z tyłu" (tzn. nowa wartość osi 'y', 'z', 'kp' jest mniejsza od poprzedniej).
-    Ramie.setZpart = ( (Ramie.getZ() - Ramie.getZtemp() ) / nWspRuchu );
-    servoA.setKPtemp ( (servoA.getKat() - servoA.getKPtemp() ) / nWspRuchu );
+    Ramie.setYpart((Ramie.getY() - Ramie.getYtemp() ) / nWspRuchu ); // floaty. minusowe wartosci dla zmiennej, jezeli punkt jest "z tyłu" (tzn. nowa wartość osi 'y', 'z', 'kp' jest mniejsza od poprzedniej).
+    Ramie.setZpart((Ramie.getZ() - Ramie.getZtemp() ) / nWspRuchu );
+    ServoA_kp.setKPtemp((ServoA_kp.getKat() - ServoA_kp.getKPtemp() ) / nWspRuchu );
   }
 }
 
@@ -56,18 +82,18 @@ void OgraniczenieWysokosci()
   }
 }
 
-void WartoscServaPozaDopuszczalnymZakresem()
+int WartoscServaPozaDopuszczalnymZakresem()
 {
-  servoA.UstawKat(90, static_cast<MOTOR_SPEED>(nServoSpeed) ); LCD_angle.PrintAngle("servoA", servoA.getKat() );
-  servoB.UstawKat(90, static_cast<MOTOR_SPEED>(nServoSpeed) ); LCD_angle.PrintAngle("servoB", servoB.getKat() );
-  servoC.UstawKat(90, static_cast<MOTOR_SPEED>(nServoSpeed) ); LCD_angle.PrintAngle("servoC", servoC.getKat() );
-  servoD.UstawKat(90, static_cast<MOTOR_SPEED>(nServoSpeed) ); LCD_angle.PrintAngle("servoD", servoD.getKat() );
+  ServoA_kp.UstawKat(90); LCD_angle.PrintAngle("ServoA_kp", ServoA_kp.getKat() );
+  ServoB_alpha.UstawKat(90); LCD_angle.PrintAngle("ServoB_alpha", ServoB_alpha.getKat() );
+  ServoC_beta.UstawKat(90); LCD_angle.PrintAngle("ServoC_beta", ServoC_beta.getKat() );
+  ServoD_fi.UstawKat(90); LCD_angle.PrintAngle("ServoD_fi", ServoD_fi.getKat() );
 
   Komunikaty.ServoPozaZakresem();
 
   Ramie.setY(Ramie.getDlugoscB()); Ramie.setZ(Ramie.getDlugoscZ1() + Ramie.getDlugoscA() ); //wartości jak z 'reset'
   LCD_pos.PrintPos("y", Ramie.getY()); LCD_pos.PrintPos("z", Ramie.getZ() );
-  i = nWspRuchu - 1; //po tym wyjdź z petli
+  return nWspRuchu - 1; //po tym wyjdź z petli
 }
 
 void Reset()
@@ -76,32 +102,71 @@ void Reset()
   Ramie.setY(Ramie.getDlugoscB() );
   Ramie.setZ(Ramie.getDlugoscZ1() + Ramie.getDlugoscA() ); LCD_pos.PrintPos("y", Ramie.getY() ); LCD_pos.PrintPos("z", Ramie.getZ() ); //ustawienia wynikajace z katow = 90
   sCoreCommand = "(184,296)"; //to samo co wyzej
-  servoA.UstawKat(90, MOTOR_SPEED_NORMAL); LCD_angle.PrintAngle("servoA", servoA.getKat() ); LCD_pos.PrintPos("x", -1);
-  servoE.UstawKat(90, MOTOR_SPEED_NORMAL); LCD_angle.PrintAngle("servoE", servoE.getKat() );
-  servoF.UstawKat(200 - 90, MOTOR_SPEED_NORMAL); LCD_angle.PrintAngle("servoF", servoF.getKat() );
+  Serwis.ZmienPredkosc(&Ramie); //bez podania 2go parametru predkosc sie zresetuje na MOTOR_SPEED_NORMAL (18)
+  ServoA_kp.UstawKat(90); LCD_angle.PrintAngle("ServoA_kp", ServoA_kp.getKat() ); LCD_pos.PrintPos("x", -1);
+  ServoE_ks1.UstawKat(90); LCD_angle.PrintAngle("ServoE_ks1", ServoE_ks1.getKat() );
+  ServoF_ks2.UstawKat(200 - 90); LCD_angle.PrintAngle("ServoF_ks2", ServoF_ks2.getKat() );
 }
 
-void PrzerwijPetle()
+int PrzerwijPetle()
 {
   bPrzerwaniePetli = false;
-  i = nWspRuchu - 1; //owa zmienna 'i' przerwie pętle w kolejnym przejściu
+  return nWspRuchu - 1; //owa zmienna 'i' przerwie pętle w kolejnym przejściu
 }
 
 void PrewencyjnieDociagnijDoZadanegoPolozenia()
 {
-  servoA.setKPtemp(servoA.getKat() ); /*powtórne dla pierwszego ustawienia ramienia- nie szkodzi*/
+  ServoA_kp.setKPtemp(ServoA_kp.getKat() ); /*powtórne dla pierwszego ustawienia ramienia- nie szkodzi*/
   Ramie.setYtemp(Ramie.getY() );
   Ramie.setZtemp(Ramie.getZ() );
 }
 
 void UstawKatySerw()
 {
-  servoA.UstawKat(servoA.getKPtemp(), static_cast<MOTOR_SPEED>(nServoSpeed)); /*servoA.write(n_kp_temp, nServoSpeed, false);*/ //tutaj to nie zadziala. musi być warunek dla n_kp_temp
-  servoB.UstawKat(ServoB_alpha.ObliczKatAlfa(Ramie.getPrzekatnaRamieniaL(), Ramie.getDlugoscA(), Ramie.getDlugoscB(), Ramie.getYtemp() ), static_cast<MOTOR_SPEED>(nServoSpeed) );
-  LCD_angle.PrintAngle("servoB", ServoB_alpha.getKat() );
-  servoC.UstawKat(Ramie.ObliczKatBeta(), static_cast<MOTOR_SPEED>(nServoSpeed) );
-  LCD_angle.PrintAngle("servoC", servoC.getKat() );
+  ServoA_kp.UstawKat(ServoA_kp.getKPtemp()); /*ServoA_kp.write(n_kp_temp, nServoSpeed, false);*/ //tutaj to nie zadziala. musi być warunek dla n_kp_temp (co?)
+  ServoB_alpha.UstawKat(ServoB_alpha_alpha.ObliczKatAlfa(Ramie.getPrzekatnaRamieniaL(), Ramie.getDlugoscA(), Ramie.getDlugoscB(), Ramie.getYtemp() ));   LCD_angle.PrintAngle("ServoB_alpha", ServoB_alpha_alpha.getKat() );
+  ServoC_beta.UstawKat(Ramie.ObliczKatBeta(&Komunikaty));   LCD_angle.PrintAngle("ServoC_beta", ServoC_beta.getKat() );
   //bardzo problematyczne jest ustawić kąt mechanicznie. zmieniam o n_fi_poprawka stopni do fi zawsze by wyszło tyle ile jest założone.
-  servoD.UstawKat(Ramie.ObliczKatFi() + Ramie.getFiPoprawka(), static_cast<MOTOR_SPEED>(nServoSpeed)); LCD_angle.PrintAngle("servoD", servoD.getKat() ); //!!!z jakis powodow tutaj predkosc ustawiona jest na 35
+  ServoD_fi.UstawKat(Ramie.ObliczKatFi() + Ramie.getFiPoprawka()); LCD_angle.PrintAngle("ServoD_fi", ServoD_fi.getKat() ); //!!!z jakis powodow tutaj predkosc ustawiona była na 35
+}
+
+void WykonajRuchRamieniem()
+{
+  ObliczPartyPrzemieszczenia(); //dla każdego normalnego podanego ruchu oblicz części ruchu do dodawania w pętli ruchu
+  for (int i = 0; i < nWspRuchu; i++) //wykonuj cząstkowe ruchy "nWspRuchu" razy, aż ruch się wykona, lub do błędnych kątów serw. duży warunek.
+  {
+    DodajDoPunktuPCzescRuchuRamienia();
+    if (i >= nWspRuchu - 1) WyrownanieTempowPoDodaniuOstatnichPartow(); //docelowy zadany punkt. jeśli gdzieś powstałyby minimalne błędy, to tu są naprawiane.
+    //poniżej poprawka wysokosci - niech program myśli że jego zadane wartości są idealnie odwzorywane, a realnie obliczaj i ustawiaj kąty tak, by wyszło lepiej o skompensowany zmierzony błąd
+    Ramie.setZtemp(Ramie.getZtemp() + fWektorOdchylek[Ramie.getYtemp() - 100]); LCD_pos.PrintPos("z", Ramie.getZtemp() ); //dodaj różnicę wysokości podstawy chwytaka i planszy
+    Komunikaty.PokazInfo(INFO_ODLEGLOSC_Z_UPGR, (String)Ramie.getZtemp() ); //poprawkę wysokości jako metoda ramienia
+    OgraniczenieWysokosci();
+
+    if (ServoB_alpha.getKat() <= 180 && ServoB_alpha.getKat() >= 0 && ServoC_beta.getKat() <= 157 && ServoC_beta.getKat() >= 24 && ServoD_fi.getKat() <= 180 && ServoD_fi.getKat() >= 45) UstawKatySerw(); //dopuszczalne kąty.
+    else i = WartoscServaPozaDopuszczalnymZakresem(); //jeżeli kąt wyskoczył poza dopuszczalne wartości, to ustaw bezpieczne wartości, pokaż gdzie był błąd w zmiennych i wyjdź z pętli
+
+    delay(15000 / (Ramie.getPredkosc() * nWspRuchu)); //po każdej iteracji czekaj chwilę, aby serwa zdążyły powoli dojechać. współczynnik wyznaczony empirycznie (tj. na oko).
+    if (bPrzerwaniePetli == true) i = PrzerwijPetle(); //wyjscie z petli for w szczegolnych wypadkach- error lub
+  }
+
+  PrewencyjnieDociagnijDoZadanegoPolozenia(); //wartości mimo iż są ok, przypisywane są jeszcze raz, bo możliwe że po wielu przejściach kąty będą się przesuwać o małe wartości
+  UstawFiDoKolejnegoRuchu(&Ramie, &ServoB_alpha, &ServoA_kp);
+  if (!Ramie.getDownState && Komunikaty.InfoDlaRdzenia() != "r_trashed")  ServoB_alpha.PodniesPrewencyjnie();//jeżeli funkcja nie wykonywała ruchu typu down ani usuwania bierki to podnies prewecyjnie, aby nie wywracało bierek skrajnych
+
+  if (Komunikaty.getSekwencjaRuchow() == true) //jeżeli mieliśmy do czynienia z ruchem generowanym z gry/ze strony
+  {
+    if (Komunikaty.InfoDlaRdzenia() == "armUp2") //jeżeli był to ostatni ruch z sekwencji przemieszczania pionka
+    {
+      ServoA_kp.UstawKat(110); LCD_angle.PrintAngle("ServoA_kp", ServoA_kp.getKat() );  //to serwem podstawy ustaw się na środku planszy
+      Komunikaty.setSekwencjaRuchow(false); // nie wykonuj już więcej funkcji związanym z grą na stronie WWW, aż do Stringa rozpoczynającego sekwencje ruchów
+    }
+    Komunikaty.OdpowiedzNaRdzen(Komunikaty.InfoDlaRdzenia(), ""); //wyślij do core informację o tym jaki żądany ruch z core'a został wykonany
+  }
+
+  /*sprzatanie i przywracanie zmiennych*/
+  if (Serwis.getPredkoscSerwisowa() == 0) Ramie.setPredkosc(MOTOR_SPEED_NORMAL); //jeżei serwisowo nie była zmieniana prędkosc, to ustaw predkosc serw na normalną (moglo to byc zmieniane przez polecenia up/down)...
+  else Ramie.setPredkosc(getPredkoscSerwisowa() ); //...jeżeli jednak prędkość była zmieniana ręcznie to będzie ona musiala wracac zawsze do tej podanej wartości.
+  Ramie.setUpState(false); Ramie.setDownState(false); //jeżeli był wykonywny ruch typu up/down to zresetuj te zmienne, by w kolejnym przejściu arduino nie zareagowało na nie.
+  sCoreCommand = ""; //po przejściu przez cały program wyczyść tą zmienną, by w kolejnym przejściu nie został uruchomiony któryś warunek.
 }
 

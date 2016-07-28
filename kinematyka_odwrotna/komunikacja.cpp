@@ -9,11 +9,11 @@ cKomunikacja::cKomunikacja()
   _bSekwencjaRuchow = false;
 }
 
-void cKomunikacja::PokazInfo(INFO_TYPE typInformacji, String sZmiennaDoPokazania)
+void cKomunikacja::PokazInfo(INFO_TYPE TypInformacji, String sZmiennaDoPokazania)
 {
   if (_bPokazujeInfo == true)
   {
-    switch (typInformacji)
+    switch (TypInformacji)
     {
       case INFO_FIELD_LETTER:
         Serial.print("litera pola = ");
@@ -118,7 +118,7 @@ void cKomunikacja::PrzygotujOdpowiedzNaRdzen(String sPolecenieRdzenia)
   _sInfoDlaRdzenia = sTypRuchuBierki + sTypRuchuRamienia + sKtoryTakiRuch;
 }
 
-void cKomunikacja::OdpowiedzNaRdzen(String sMsgPart)
+void cKomunikacja::OdpowiedzNaRdzen(String sMsgPart) // ! moge z tego zrobic jeda funkcje z tą z dołu
 {
   Serial.println("testy w OdpowiedzNaRdzen");
   if (_bZnakiKoncowLinii == true)
@@ -151,6 +151,7 @@ void cKomunikacja::OdpowiedzNaRdzen(String sMsgPart1, String sMsgPart2)
 
 void cKomunikacja::ServoPozaZakresem()
 {
+  // !! wysrac full wiadomosci jezeli mamy doczynenia z funkcja serwisowa
   /*//pokaz gdzie sie program wykrzaczyl na obliczeniach
   Serial.print("z0 = "); Serial.println(z0);
   Serial.print("z0^2 = "); Serial.println(z0_kwadrat); //pokaz gdzie sie program wykrzaczyl na obliczeniach

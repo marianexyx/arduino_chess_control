@@ -1,17 +1,19 @@
 #include "Arduino.h"
 #include "serwis.h"
 
-cSerwis::cSerwis(cKomunikacja* pKomunikacja,  cSilnik* pSilnik) 
+cSerwis::cSerwis(cKomunikacja* pKomunikacja, cRamie* pRamie) 
 {
   _pKomunikacja = pKomunikacja;
-  _pSilnik = pSilnik;
+  _pRamie = pRamie;
+  _nPredkoscSerwisowa = 0;
 }
 
-void cSerwis::ZmienPredkosc(String sKomendaRdzenia) //funckja serwisowa. ustawia prędkość przemieszczania się ramienia (bez up/down)
+void cSerwis::ZmienPredkosc(String sKomendaRdzenia) //funckja serwisowa. ustawia prędkość przemieszczania się ramienia (bez up/down).
+//w ramieniu istneije predkosc do aktualnego wykonywania ruchu, a w serwisie predkosc serwisowa do ktorej ramie bedzie wracac podczas czesciowych zmian predkosci w ruchach takich jak np. up/down
 {
-  MOTOR_SPEED predkoscSilnika = static_cast<MOTOR_SPEED>(sKomendaRdzenia.substring(8).toInt());
-  _pSilnik->setPredkosc(predkoscSilnika);
-  Serial.print("servo speed = "); Serial.println(predkoscSilnika);
+  _nPredkoscSerwisowa = sKomendaRdzenia.substring(8).toInt();
+  _pRamie->setPredkosc(_nPredkoscSerwisowa);
+  Serial.print("servo speed = "); Serial.println(sKomendaRdzenia.substring(8));
 }
 void cSerwis::WlaczSerwa() //daj zasilanie na serwa...
 {

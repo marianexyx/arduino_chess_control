@@ -7,6 +7,7 @@
 #include "komunikacja.h"
 #include "lcd_angle.h"
 
+class cSilnik;
 
 class cRamie: public cSilnik
 {
@@ -28,6 +29,7 @@ class cRamie: public cSilnik
     double _dYtemp, _dZtemp; //tymczasowy y,z do obliczen (używane przy d_y_part, d_z_part)
     bool _bUp, _bDown; //zmienne informują czy w danych ruchu ramienia było ono podnoszone, czy opuszczane (ważne dla prostowania serwa kąta fi, by nic nie wywrócić).
     int _nKatSzczeki; //środek zakresu pracy serwa
+    const float _fWektorOdchylek[]; //wektor poprawek wysokości (oś z). wyliczony doświadczalnie (nigdy poprawki nie są idealne). wektor koryguje wartości z zakresu od y = 100 (1st element of array) do 340 mm (last)
 
   public:
     //----------------------------------------------------------KONSTRUKTOR----------------------------------------------------------//
@@ -69,13 +71,13 @@ class cRamie: public cSilnik
     void setZpart(double dZpart)               { _dZpart = dZpart; }
     void setUpState(bool bUp)                  { _bUp = bUp; }
     void setDownState(bool bDown)              { _bDown = bDown; }
+    
 /*
     //ruchy standardowe ramienia
     [a1]()
     pierwszy ruch
     
     kolejne przejścia
-    ograniczenie wysokości
 
     odstaw do wyłączenia
     */
