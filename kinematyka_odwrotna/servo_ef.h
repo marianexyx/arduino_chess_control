@@ -1,5 +1,5 @@
-#ifndef servo_e_h
-#define servo_e_h
+#ifndef servo_ef_h
+#define servo_ef_h
 
 #include "Arduino.h"
 #include <VarSpeedServo.h>
@@ -9,17 +9,18 @@
 #include "lcd_pos.h"
 #include <math.h>
 
-class cServoE : public cSilnik
+class cServoEF : public cSilnik
 {
   private: //wskazniki LCD sa dziedziczone
     
   public:
     //----------------------------------------------------------KONSTRUKTOR----------------------------------------------------------//
-    cServoE(int nPin, float fKatMin, float fKatMax, cLCD_angle* pLCD_angle, cKomunikacja* pKomunikacja)
+    cServoEF(int nPin, String sNazwaKata, int nKatMin, int nKatMax, cLCD_angle* pLCD_angle, cLCD_pos* pLCD_pos, cKomunikacja* pKomunikacja)
     {
       _nPin = nPin;
-      _fKatMin = fKatMin;
-      _fKatMax = fKatMax;
+      _sNazwaKata = sNazwaKata;
+      _nKatMin = nKatMin;
+      _nKatMax = nKatMax;
       _pLCD_angle = pLCD_angle;
       _nPredkosc = MOTOR_SPEED_NORMAL;
       _pKomunikacja = pKomunikacja;

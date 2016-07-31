@@ -78,8 +78,6 @@ void cKomunikacja::PokazInfo(INFO_TYPE TypInformacji, String sZmiennaDoPokazania
   }
 }
 
-
-
 void cKomunikacja::PrzygotujOdpowiedzNaRdzen(String sPolecenieRdzenia)
 {
   String sTypRuchuBierki = "";

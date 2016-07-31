@@ -4,6 +4,7 @@
 #include "Arduino.h"
 #include "silnik.h"
 #include "komunikacja.h"
+#include "ramie.h"
 
 #define SERVO_POWER_PIN1 50 //zamiast pinów posługujemy się zdefiniowanymi słowami
 #define SERVO_POWER_PIN2 51

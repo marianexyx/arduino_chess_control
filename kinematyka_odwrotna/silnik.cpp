@@ -4,7 +4,7 @@
 #include <LiquidCrystal.h>
 #include <math.h>
 
-cSilnik::cSilnik(int nPin, String sNazwaKata, float fKatMin, float fKatMax, cLCD_angle* pLCD_angle, cLCD_pos* pLCD_pos, cRamie* pRamie, cKomunikacja* pKomunikacja)
+/*cSilnik::cSilnik(int nPin, String sNazwaKata, float fKatMin, float fKatMax, cLCD_angle* pLCD_angle, cLCD_pos* pLCD_pos, cKomunikacja* pKomunikacja)
 {
   _nPin = nPin;
   _sNazwaKata = sNazwaKata;
@@ -13,23 +13,24 @@ cSilnik::cSilnik(int nPin, String sNazwaKata, float fKatMin, float fKatMax, cLCD
   _nPredkosc = MOTOR_SPEED_NORMAL;
   _pLCD_angle = pLCD_angle;
   _pLCD_pos = pLCD_pos;
-  _pRamie = pRamie;
   _pKomunikacja = pKomunikacja;
-}
+}*/
+
+int cSilnik::_nPredkosc = MOTOR_SPEED_NORMAL; //sztuczka potrzebna do uzywania statycznej zmiennej 
 
 void cSilnik::Rozpocznij()
 {
   _Servo.attach(_nPin); //podpinanie serwomechanizmów do pinów. piny muszą być PWN
 }
 
-void cSilnik::UstawKat(float fKat, MOTOR_SPEED PredkoscSilnika, bool bCzekajNaKoniecRuchu)
+void cSilnik::UstawKat(float fKat, int nPedkoscServa , bool bCzekajNaKoniecRuchu)
 {
-  if (fKat >= _fKatMin || fKat <= _fKatMax) //prawidlowy zakres
+  if (fKat >= _nKatMin || fKat <= _nKatMax) //prawidlowy zakres
   {
     _fKat = fKat;
-    _Servo.write((int)_fKat, PredkoscSilnika, bCzekajNaKoniecRuchu);
+    _Servo.write((int)_fKat, nPedkoscServa, bCzekajNaKoniecRuchu);
 
-    _pLCD_angle->PrintAngle(_sNazwaServa, this->Kat());
+    _pLCD_angle->PrintAngle(_sNazwaKata, this->getKat());
     _pLCD_pos->PrintPos("y", -1);
     _pLCD_pos->PrintPos("z", -1);
 
@@ -38,11 +39,11 @@ void cSilnik::UstawKat(float fKat, MOTOR_SPEED PredkoscSilnika, bool bCzekajNaKo
   else //poza zakresem dzialania 
   {
     Serial.print("Kat "); Serial.print(_sNazwaKata); Serial.print(" podany poza zakresem <"); 
-    Serial.print(_fKatMin); Serial.print(","); Serial.print(_fKatMax); Serial.print(">: ");  Serial.println(_fKat);
+    Serial.print(_nKatMin); Serial.print(","); Serial.print(_nKatMax); Serial.print(">: ");  Serial.println(_fKat);
   }
 }
 
-void cSilnik::UstawKatSerwisowo(String sKomendaRdzenia) //funckja serwisowa - !! to wrzucic do ktorejstam wirtualnej metody kazdego serva
+/*void cSilnik::UstawKatSerwisowo(String sKomendaRdzenia) //funckja serwisowa - !! to wrzucic do ktorejstam wirtualnej metody kazdego serva
 {
   String sKat, sNazwakata;
   int nOgraniczenieKataDolne, nOgraniczenieKataGorne;
@@ -101,5 +102,5 @@ void cSilnik::UstawKatSerwisowo(String sKomendaRdzenia) //funckja serwisowa - !!
     Serial.print(nOgraniczenieKataDolne);
     Serial.print(">");
   }
-}
+}*/
 

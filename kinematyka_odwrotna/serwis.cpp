@@ -1,7 +1,7 @@
 #include "Arduino.h"
 #include "serwis.h"
 
-cSerwis::cSerwis(cKomunikacja* pKomunikacja, cRamie* pRamie) 
+cSerwis::cSerwis(cKomunikacja* pKomunikacja, cRamie* pRamie)
 {
   _pKomunikacja = pKomunikacja;
   _pRamie = pRamie;
