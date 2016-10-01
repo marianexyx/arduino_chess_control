@@ -19,8 +19,6 @@ void cSzachownica::OkreslLiterePola(String sPolecenieRdzenia)
   else if (sPolecenieRdzenia.substring(5, 6) == "]") _sLiteraPola = sPolecenieRdzenia.substring(3, 4); //... i funkcji obsługi gry.
   else Serial.print("error1");
 
-  _pKomunikacja->PokazInfo(INFO_FIELD_LETTER, (String)_sLiteraPola);
-
   if (_sLiteraPola == "a" || _sLiteraPola == "A") {
     _nWsp_m = 3;  //zamień tą literę na współczynnik n_wsp_m (jego wartośc jest ważna dla obliczeń)...
     _sLiteraPola = "a";
@@ -54,15 +52,17 @@ void cSzachownica::OkreslLiterePola(String sPolecenieRdzenia)
     _sLiteraPola = "h";
   }
   else Serial.println("ERROR: Złe podane pole planszy.");
+
+  _pKomunikacja->PokazInfo((double)_nWsp_m, INFO_FIELD_LETTER);
 }
 
 void cSzachownica::OkreslCyfrePola(String sPolecenieRdzenia)
 {
-  if (sPolecenieRdzenia.substring(11, 12) == ")") _sCyfraPola = sPolecenieRdzenia.substring(10, 11).toInt(); //sprawdź jaka podana jest cyfra pola dla funkcji serwisowych...
-  else if (sPolecenieRdzenia.substring(5, 6) == "]") _sCyfraPola = sPolecenieRdzenia.substring(4, 5).toInt(); //...i dla funkcji obsługi gry. bezpośrednie przypisanie
+  if (sPolecenieRdzenia.substring(11, 12) == ")") _dCyfraPola = (double)sPolecenieRdzenia.substring(10, 11).toInt(); //sprawdź jaka podana jest cyfra pola dla funkcji serwisowych...
+  else if (sPolecenieRdzenia.substring(5, 6) == "]") _dCyfraPola = (double)sPolecenieRdzenia.substring(4, 5).toInt(); //...i dla funkcji obsługi gry. bezpośrednie przypisanie
   else Serial.print("error2");
 
-  _pKomunikacja->PokazInfo(INFO_FIELD_NUMBER, (String)_sCyfraPola);
+  _pKomunikacja->PokazInfo(_dCyfraPola, INFO_FIELD_NUMBER);
 }
 
 double cSzachownica::ObliczSkladowa_y_DlaKataPodstawy()
@@ -114,8 +114,8 @@ unsigned long cSzachownica::Oblicz_y() // ??? obliczaniem tego powinna zająć s
   double x_h1_h8 = x_h8 - x_h1; double y_h1_h8 = y_h8 - y_h1;
   double x_a8_h8 = x_a8 - x_h8; double y_a8_h8 = y_a8 - y_h8;
 
-  double ogolny_x = x_a1 + (_sCyfraPola.toInt() * (x_a1_a8/7 + ((_nWsp_m/14) * (x_a1_h1/7 - x_a8_h8/7)))) - (_nWsp_m * (x_a1_h1/7 - ((_sCyfraPola.toInt()/14) * (x_h1_h8/7 - x_a1_a8/7)))); //składowa pionowa
-  double ogolny_y = y_a1 + (_sCyfraPola.toInt() * (y_a1_a8/7 + ((_nWsp_m/14) * (y_a1_h1/7 - y_a8_h8/7)))) - (_nWsp_m * (y_a1_h1/7 - ((_sCyfraPola.toInt()/14) * (y_h1_h8/7 - y_a1_a8/7)))); //składowa pozioma
+  double ogolny_x = x_a1 + ((int)_dCyfraPola * (x_a1_a8/7 + ((_nWsp_m/14) * (x_a1_h1/7 - x_a8_h8/7)))) - (_nWsp_m * (x_a1_h1/7 - (((int)_dCyfraPola/14) * (x_h1_h8/7 - x_a1_a8/7)))); //składowa pionowa
+  double ogolny_y = y_a1 + ((int)_dCyfraPola * (y_a1_a8/7 + ((_nWsp_m/14) * (y_a1_h1/7 - y_a8_h8/7)))) - (_nWsp_m * (y_a1_h1/7 - (((int)_dCyfraPola/14) * (y_h1_h8/7 - y_a1_a8/7)))); //składowa pozioma
   
   unsigned long y = sqrt(pow(ogolny_x,2) + pow(ogolny_y,2)); //wartość której szukamy- przekątna dwóch składowych powyżej
 

@@ -15,15 +15,16 @@ class cServoEF : public cSilnik
     
   public:
     //----------------------------------------------------------KONSTRUKTOR----------------------------------------------------------//
-    cServoEF(int nPin, String sNazwaKata, int nKatMin, int nKatMax, cLCD_angle* pLCD_angle, cLCD_pos* pLCD_pos, cKomunikacja* pKomunikacja)
+    cServoEF(int nPin, String sNazwaKata, int nKatMin, int nKatMax, cLCD_angle* pLCD_angle, cLCD_pos* pLCD_pos/*, cKomunikacja* pKomunikacja*/)
     {
       _nPin = nPin;
       _sNazwaKata = sNazwaKata;
       _nKatMin = nKatMin;
       _nKatMax = nKatMax;
       _pLCD_angle = pLCD_angle;
+      _pLCD_pos = pLCD_pos;
       _nPredkosc = MOTOR_SPEED_NORMAL;
-      _pKomunikacja = pKomunikacja;
+     //4 _pKomunikacja = pKomunikacja;
     }
 };
 

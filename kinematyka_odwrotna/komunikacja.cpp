@@ -1,81 +1,113 @@
 #include "Arduino.h"
 #include "komunikacja.h"
 
-cKomunikacja::cKomunikacja()
+cKomunikacja::cKomunikacja(cServoA* pServoA, cServoB* pServoB, cServoC* pServoC, cServoD* pServoD, cServoEF* pServoEF, cRamie* pRamie)
 {
   _bPokazujeInfo = false;
   _bZnakiKoncowLinii = true; //definiuje czy dodajemy w funkcji znaki dla początku i końca wiadomości dla poprawnej komunikacji asynchronicznej z core'm
   _sInfoDlaRdzenia = "none";
   _bSekwencjaRuchow = false;
+
+  _pServoA = pServoA;
+  _pServoB = pServoB;
+  _pServoC = pServoC;
+  _pServoD = pServoD;
+  _pSilnikE = pServoE;
+  _pSilnikF = pServoF;
+  _pRamie = pRamie;
 }
 
-void cKomunikacja::PokazInfo(INFO_TYPE TypInformacji, String sZmiennaDoPokazania)
+void cKomunikacja::PokazPozycjeRamienia()
 {
   if (_bPokazujeInfo == true)
+  {
+    Serial.print("kp = "); Serial.print(_pServoA.getKat());
+    Serial.print(", alpha= "); Serial.print(_pServoB.getKat());
+    Serial.print(", beta= "); Serial.print(_pServoC.getKat()); if ((int)_pServoC.getKat() >= 157) Serial.print("!!!");
+    Serial.print(", fi= "); Serial.println(_pServoD.getKat());
+    Serial.print(" | y = "); Serial.print(_pRamie.getYtemp()); //Ramie.getYtemp() + Z???
+    Serial.print(", z = "); Serial.print(_pRamie.getZtemp());   //wysokość będzie podawana ta, którą dopiero chcemy realnie osiągnąć poprzez kompensację błędu chwilę dalej, a którą zadaliśmy
+    Serial.print(", z_upgr = "); Serial.print(_pRamie.getZtemp()); if ((int)dZmiennaDoPokazania >= 236) Serial.print("!!!");
+  }
+}
+
+void cKomunikacja::PokazInfo(double dZmiennaDoPokazania, INFO_TYPE TypInformacji)
+{
+  if (_bPokazujeInfo)
   {
     switch (TypInformacji)
     {
       case INFO_FIELD_LETTER:
         Serial.print("litera pola = ");
-        Serial.println(sZmiennaDoPokazania);
+        if (dZmiennaDoPokazania == 3) Serial.println("a");
+        else if ( dZmiennaDoPokazania == 2) Serial.println("b");
+        else if ( dZmiennaDoPokazania == 1) Serial.println("c");
+        else if ( dZmiennaDoPokazania == 0) Serial.println("d");
+        else if ( dZmiennaDoPokazania == -1) Serial.println("e");
+        else if ( dZmiennaDoPokazania == -2) Serial.println("f");
+        else if ( dZmiennaDoPokazania == -3) Serial.println("g");
+        else if ( dZmiennaDoPokazania == -4) Serial.println("h");
+        else Serial.println("ERROR: Błędne pole planszy.");
         break;
       case INFO_FIELD_NUMBER:
         Serial.print("cyfra pola = ");
-        Serial.println(sZmiennaDoPokazania);
+        Serial.println(dZmiennaDoPokazania);
         break;
-      case INFO_KAT_KP:
+      /*case INFO_KAT_KP:
         Serial.print("kp = ");
-        Serial.print(sZmiennaDoPokazania);
+        Serial.print((int)dZmiennaDoPokazania);
         break;
-      case INFO_ODLEGLOSC_Y:
-        Serial.print(", y = ");
-        Serial.print(sZmiennaDoPokazania);
+        case INFO_KAT_ALPHA:
+        Serial.print(", alpha= ");
+        Serial.print(dZmiennaDoPokazania);
         break;
-      case INFO_ODLEGLOSC_Z:
+        case INFO_KAT_BETA:
+        Serial.print(", beta= ");
+        Serial.print(dZmiennaDoPokazania);
+        if ((int)dZmiennaDoPokazania >= 157) Serial.print("!!!");
+        break;
+        case INFO_KAT_FI:
+        Serial.print(", fi= ");
+        Serial.println(dZmiennaDoPokazania);
+        break;
+        case INFO_ODLEGLOSC_Y:
+        Serial.print(" | y = ");
+        Serial.print(dZmiennaDoPokazania);
+        break;
+        case INFO_ODLEGLOSC_Z:
         //wysokość będzie podawana ta, którą dopiero chcemy realnie osiągnąć
         //poprzez kompensację błędu chwilę dalej, a którą zadaliśmy
         Serial.print(", z = ");
-        Serial.print(sZmiennaDoPokazania);
+        Serial.print(dZmiennaDoPokazania);
         break;
-      case INFO_ODLEGLOSC_Z_UPGR:
+        case INFO_ODLEGLOSC_Z_UPGR:
         Serial.print(", z_upgr = ");
-        Serial.print(sZmiennaDoPokazania);
-        if (sZmiennaDoPokazania.toInt() >= 236) Serial.print("!!!");
-        break;
-      case INFO_KAT_ALPHA:
-        Serial.print("  |  alpha= ");
-        Serial.print(sZmiennaDoPokazania);
-        break;
-      case INFO_KAT_BETA:
-        Serial.print(", beta= ");
-        Serial.print(sZmiennaDoPokazania);
-        if (sZmiennaDoPokazania.toInt() >= 157) Serial.print("!!!");
-        break;
-      case INFO_KAT_FI:
-        Serial.print(", fi= ");
-        Serial.println(sZmiennaDoPokazania);
-        break;
+        Serial.print(dZmiennaDoPokazania);
+        if ((int)dZmiennaDoPokazania >= 236) Serial.print("!!!");
+        break;*/
       case INFO_OPEN:
         Serial.print("opened. katSzczeki = ");
-        Serial.println(sZmiennaDoPokazania);
+        Serial.println(dZmiennaDoPokazania);
         break;
       case INFO_CLOSE:
         Serial.print("closed. katSzczeki = ");
-        Serial.println(sZmiennaDoPokazania);
+        Serial.println(dZmiennaDoPokazania);
         break;
       case INFO_UP:
         Serial.print("up: z[mm] = ");
-        Serial.println(sZmiennaDoPokazania);
+        Serial.println(dZmiennaDoPokazania);
         break;
       case INFO_DOWN:
         Serial.print("down: z[mm] = ");
-        Serial.println(sZmiennaDoPokazania);
+        Serial.println(dZmiennaDoPokazania);
         break;
       default:
-        Serial.println(sZmiennaDoPokazania);
+        Serial.print("error: wrong var TypInformacji (INFO_TYPE) in cKomunikacja::PokazInfo()");
+        Serial.println(dZmiennaDoPokazania);
         break;
     }
   }
+  return;
 }
 
 void cKomunikacja::PrzygotujOdpowiedzNaRdzen(String sPolecenieRdzenia)
@@ -118,10 +150,8 @@ void cKomunikacja::PrzygotujOdpowiedzNaRdzen(String sPolecenieRdzenia)
 
 void cKomunikacja::OdpowiedzNaRdzen(String sMsgPart) // ! moge z tego zrobic jeda funkcje z tą z dołu
 {
-  Serial.println("testy w OdpowiedzNaRdzen");
   if (_bZnakiKoncowLinii == true)
   {
-    Serial.println("testy  _bZnakiKoncowLinii true");
     String sAnswer = "@" + sMsgPart + "$";
     Serial.print(sAnswer);
   }
@@ -151,16 +181,16 @@ void cKomunikacja::ServoPozaZakresem()
 {
   // !! wysrac full wiadomosci jezeli mamy doczynenia z funkcja serwisowa
   /*//pokaz gdzie sie program wykrzaczyl na obliczeniach
-  Serial.print("z0 = "); Serial.println(z0);
-  Serial.print("z0^2 = "); Serial.println(z0_kwadrat); //pokaz gdzie sie program wykrzaczyl na obliczeniach
-  Serial.print("y^2 = "); Serial.println(y_kwadrat);
-  Serial.print("przekatna L [mm]= "); Serial.println(L);
-  Serial.print("L^2 = "); Serial.println(L * L);
-  Serial.print("pre_alpha1_rad= "); Serial.println(pre_alpha1_rad);
-  Serial.print("pre_alpha2_rad= "); Serial.println(pre_alpha2_rad);
-  Serial.print("alpha_rad= "); Serial.println(alpha_rad);
-  Serial.print("pre_beta_rad= "); Serial.println(pre_beta_rad);
-  Serial.print("beta_rad= "); Serial.println(beta_rad);*/ //teog troche mi się nie chce. musiałbym się uczyć wrzucać cały obiekt w argumenty innego obiektu. może kiedyś
+    Serial.print("z0 = "); Serial.println(z0);
+    Serial.print("z0^2 = "); Serial.println(z0_kwadrat); //pokaz gdzie sie program wykrzaczyl na obliczeniach
+    Serial.print("y^2 = "); Serial.println(y_kwadrat);
+    Serial.print("przekatna L [mm]= "); Serial.println(L);
+    Serial.print("L^2 = "); Serial.println(L * L);
+    Serial.print("pre_alpha1_rad= "); Serial.println(pre_alpha1_rad);
+    Serial.print("pre_alpha2_rad= "); Serial.println(pre_alpha2_rad);
+    Serial.print("alpha_rad= "); Serial.println(alpha_rad);
+    Serial.print("pre_beta_rad= "); Serial.println(pre_beta_rad);
+    Serial.print("beta_rad= "); Serial.println(beta_rad);*/ //teog troche mi się nie chce. musiałbym się uczyć wrzucać cały obiekt w argumenty innego obiektu. może kiedyś
   Serial.println("Error: Servo poza zakresem dopuszczalnych kątów");
 }
 

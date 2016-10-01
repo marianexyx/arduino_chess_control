@@ -11,22 +11,25 @@
 
 enum MOTOR_SPEED { MOTOR_SPEED_SLOW  = 2, MOTOR_SPEED_NORMAL = 18, MOTOR_SPEED_FAST  = 70, MOTOR_SPEED_MAX   = 255 };
 
+String inDoubleOutString(double dIncDouble, int nDlugoscStrOut = 6, int nDlugoscPoPrzecinku = 2);
+
 class cLCD_angle;
 
-class cSilnik
+class cSilnik //virtual?
 {    
   protected:
     int _nPin;
     static int _nPredkosc; 
     String _sNazwaKata;
-    float _fKat; 
+    double _dKat; 
     int _nKatMin;
     int _nKatMax;
+    //String _sKat;
     VarSpeedServo _Servo;
     cLCD_angle* _pLCD_angle; 
     cLCD_pos* _pLCD_pos;
-    cKomunikacja* _pKomunikacja;
-    
+    //cKomunikacja* _pKomunikacja;
+
  public:
     //----------------------------------------------------------KONSTRUKTORY---------------------------------------------------------//
     cSilnik() {} //dla dziedziczenia wymagany jest pusty konstruktor (?)
@@ -34,11 +37,11 @@ class cSilnik
 
     //------------------------------------------------------------METODY-------------------------------------------------------------//
     void Rozpocznij();
-    void UstawKat(float fKat, int nPedkoscServa = _nPredkosc, bool bCzekajNaKoniecRuchu = false); 
+    void UstawKat(double dKat, int nPedkoscServa = _nPredkosc, bool bCzekajNaKoniecRuchu = false); 
     /*virtual void UstawKatSerwisowo() = 0;*/ // serwisowe alpha beta ks fi  - ! jak wlacze ta metoda jako wirtualna, to jego pochodne tez mi arduino krzyczy jako wirtualne i nie moge stworzyc obiektu z tych klas 
     
     //----------------------------------------------------METODY-DOSTĘPOWE-DO-PÓL----------------------------------------------------//
-    float getKat() const                           { return _fKat; }
+    double getKat() const                          { return _dKat; }
     String getNazwaKata() const                    { return _sNazwaKata; }
     int getPredkosc() const                        { return _nPredkosc; }
     int getKatMin() const                          { return _nKatMin; }

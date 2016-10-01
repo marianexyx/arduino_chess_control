@@ -21,26 +21,36 @@ int cSilnik::_nPredkosc = MOTOR_SPEED_NORMAL; //sztuczka potrzebna do uzywania s
 void cSilnik::Rozpocznij()
 {
   _Servo.attach(_nPin); //podpinanie serwomechanizmów do pinów. piny muszą być PWN
+  Serial.print("Kat "); Serial.print(_sNazwaKata); Serial.println(" podlaczony.");
 }
 
-void cSilnik::UstawKat(float fKat, int nPedkoscServa , bool bCzekajNaKoniecRuchu)
+void cSilnik::UstawKat(double dKat, int nPedkoscServa , bool bCzekajNaKoniecRuchu)
 {
-  if (fKat >= _nKatMin || fKat <= _nKatMax) //prawidlowy zakres
+  if (dKat >= _nKatMin || dKat <= _nKatMax) //prawidlowy zakres
   {
-    _fKat = fKat;
-    _Servo.write((int)_fKat, nPedkoscServa, bCzekajNaKoniecRuchu);
+    _dKat = dKat; 
+    _Servo.write((int)_dKat, nPedkoscServa, bCzekajNaKoniecRuchu); 
 
-    _pLCD_angle->PrintAngle(_sNazwaKata, this->getKat());
-    _pLCD_pos->PrintPos("y", -1);
-    _pLCD_pos->PrintPos("z", -1);
+    //_pLCD_angle->PrintAngle(_sNazwaKata, this->getKat());
+    //_pLCD_pos->PrintPos("y", -1);
+    //_pLCD_pos->PrintPos("z", -1); 
 
-    _pKomunikacja->PokazInfo(INFO_KAT_BETA, (String)_fKat);
+    /*INFO_TYPE TypServa = INFO_ELSE; 
+    if (_sNazwaKata == "kp") TypServa = INFO_KAT_KP; 
+    else if (_sNazwaKata == "alpha") TypServa = INFO_KAT_ALPHA; 
+    else if (_sNazwaKata == "beta") TypServa = INFO_KAT_BETA; 
+    else if (_sNazwaKata == "fi") TypServa = INFO_KAT_FI; 
+    else TypServa = INFO_ELSE; 
+    
+    _pKomunikacja->PokazInfo(_dKat, TypServa);*/    
+
   }
   else //poza zakresem dzialania 
   {
     Serial.print("Kat "); Serial.print(_sNazwaKata); Serial.print(" podany poza zakresem <"); 
-    Serial.print(_nKatMin); Serial.print(","); Serial.print(_nKatMax); Serial.print(">: ");  Serial.println(_fKat);
+    Serial.print(_nKatMin); Serial.print(","); Serial.print(_nKatMax); Serial.print(">: ");  Serial.println(_dKat);
   }
+  //Serial.println("try Silnik.h: after if statement");
 }
 
 /*void cSilnik::UstawKatSerwisowo(String sKomendaRdzenia) //funckja serwisowa - !! to wrzucic do ktorejstam wirtualnej metody kazdego serva

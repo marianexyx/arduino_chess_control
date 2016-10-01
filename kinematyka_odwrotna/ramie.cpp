@@ -4,6 +4,8 @@
 #include "ramie.h"
 #include "komunikacja.h"
 
+double cRamie::_dL = 0; //pole statyczne
+
 cRamie::cRamie(cKomunikacja* pKomunikacja, cLCD_angle* pLCD_angle, cSilnik* pSilnikE, cSilnik* pSilnikF)
 {
   _pKomunikacja = pKomunikacja;
@@ -33,7 +35,7 @@ void cRamie::ObliczPrzekatnaRamieniaL()
   ulYkwadrat = (unsigned long)_dYtemp * (unsigned long)_dYtemp;
   ulZ0 = (unsigned long)_dZtemp - _nZ1; //odległość punktu P(y,z) od wysokośći na której jest servoB w pionie- założenie, że punkt nigdy nie jest poniżej serva (nigdy nie będzie)
   ulZ0kwadrat = ulZ0 * ulZ0;
-  _dL = static_cast<double>(sqrt(ulZ0kwadrat + ulYkwadrat) ); //przekątna od servaB do punktu P(y,z)
+  cRamie::_dL = static_cast<double>(sqrt(ulZ0kwadrat + ulYkwadrat) ); //przekątna od servaB do punktu P(y,z)
 }
 
 void cRamie::Open() 
@@ -41,7 +43,7 @@ void cRamie::Open()
   int nSzczekiOtwarte = 102;
   _pSilnikE->UstawKat(nSzczekiOtwarte); _pLCD_angle->PrintAngle("servoE", _pSilnikE->getKat() );
   _pSilnikF->UstawKat(200 - nSzczekiOtwarte); _pLCD_angle->PrintAngle("servoF", _pSilnikF->getKat() );
-  _pKomunikacja->PokazInfo(INFO_OPEN, (String)nSzczekiOtwarte);
+  _pKomunikacja->PokazInfo((double)nSzczekiOtwarte, INFO_OPEN);
 }
 
 void cRamie::Close() 
@@ -49,7 +51,7 @@ void cRamie::Close()
   int nSzczekiZamkniete = 83;
   _pSilnikE->UstawKat(nSzczekiZamkniete); _pLCD_angle->PrintAngle("servoE", _pSilnikE->getKat() );
   _pSilnikF->UstawKat(200 - nSzczekiZamkniete); _pLCD_angle->PrintAngle("servoF", _pSilnikF->getKat() );
-  _pKomunikacja->PokazInfo(INFO_CLOSE, (String)nSzczekiZamkniete);
+  _pKomunikacja->PokazInfo((double)nSzczekiZamkniete, INFO_CLOSE);
 }
 
 void cRamie::Up()
@@ -57,7 +59,7 @@ void cRamie::Up()
   _bUp = true;
   _dZ = 230; //jedna z 2 możliwych 'z' możliwych docelowo do osiągnięcia w programie (inne są zbędne)
   this->setPredkosc(MOTOR_SPEED_SLOW); //predkosc serw podczas podnoszenia od planszy
-  _pKomunikacja->PokazInfo(INFO_UP, (String)_dZ);
+  _pKomunikacja->PokazInfo(_dZ, INFO_UP);
 }
 
 void cRamie::Down()
@@ -65,7 +67,7 @@ void cRamie::Down()
   _bDown = true;
   _dZ = 158; //jw. w 'up'
   this->setPredkosc(MOTOR_SPEED_SLOW); //predkosc serw podczas opadania ku planszy
-  _pKomunikacja->PokazInfo(INFO_DOWN, (String)_dZ);
+  _pKomunikacja->PokazInfo(_dZ, INFO_DOWN);
 }
 
 void cRamie::UstawKatSzczeki(int nKatSzczek)

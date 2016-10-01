@@ -11,7 +11,8 @@ class cSzachownica
   private:
     cKomunikacja* _pKomunikacja;
     cLCD_pos* _pLCD_pos;
-    String _sLiteraPola, _sCyfraPola; //pole planszy szachownicy rozbite na 2 składowe i wrzucone do Stringów do dalszych przekształceń ( z char'ami miałem problemy).
+    String _sLiteraPola;
+    double _dCyfraPola; 
     int _nWsp_m; //interpretacja pola planszy szachownicy (liczby). "m" może operować wartościami od 3 do -4 (ważne dla obliczeń).
     float _f_y0, _fDlugoscPola, _fBladSrodka; //na podstawie tych wartości i 4 skrajnych pól szachownicy liczone są położenia wszsytkich innych pól planszy w grze.
     //zmienne zostały zmierzone linijką, a potem metodami sztucznej inteligencji w matlabie dociągnięte do takich wartości, by ze wzoru na wszsytkie pola szachownicy najlepiej wychodziły te
@@ -41,7 +42,7 @@ class cSzachownica
 
     //----------------------------------------------------METODY-DOSTĘPOWE-DO-PÓL----------------------------------------------------//
     String getLiteraPola() const                        { return _sLiteraPola; }
-    String getCyfraPola() const                         { return _sCyfraPola; }
+    double getCyfraPola() const                         { return _dCyfraPola; }
 };
 
 #endif

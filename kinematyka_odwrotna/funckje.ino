@@ -25,16 +25,17 @@ void SprawdzTypPolecenia(String sKomendaRdzenia)
   else KomendaRdzenia = CC_ELSE;
 }
 
-float fWektorOdchylek[] = { -11, -10.9, -10.8, -10.7, -10.6, -10.5, -10.4, -10.3, -10.2, -10.1, -10, -9.7, -9.4, -9.1, -8.8, -8.5, -8.2, -7.9, -7.6, -7.3, -7, -7.3, -7.6, -7.9, -8.2,
-                     -8.5, -8.8, -9.1, -9.4, -9.7, -10, -9.5, -9, -8.5, -8, -7.5, -7, -6.5, -6, -5.5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -4.9, -4.8, -4.7, -4.6, -4.5, -4.4, -4.3, -4.2, -4.1, -4,
-                     -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -3.7, -3.4, -3.1, -2.8, -2.5, -2.2, -1.9, -1.6, -1.3, -1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6,
-                     0.7, 0.8, 0.9, 1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8, 8.2,
-                     8.4, 8.6, 8.8, 9, 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 9.9, 10, 10.3, 10.6, 10.9, 11.2, 11.5, 11.8, 12.1, 12.4, 12.7, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13.5, 14, 14.5, 15,
-                     15.5, 16, 16.5, 17, 17.5, 18, 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7, 18.8, 18.9, 19, 19.2, 19.4, 19.6, 19.8, 20, 20.2, 20.4, 20.6, 20.8, 21, 21.4, 21.8, 22.2, 22.6, 23, 23.4, 23.8,
-                     24.2, 24.6, 25, 25.3, 25.6, 25.9, 26.2, 26.5, 26.8, 27.1, 27.4, 27.7, 28, 27.9, 27.8, 27.7, 27.6, 27.5, 27.4, 27.3, 27.2, 27.1, 27, 27.9, 28.8, 29.7, 30.6, 31.5, 32.4, 33.3, 34.2, 35.1,
-                     36
-                   }; //wektor poprawek wysokości (oś z). wyliczony doświadczalnie (nigdy poprawki nie są idealne). wektor koryguje wartości z zakresu //!! na pewno 241 to rozmiar tej tablicy?
-    //od y = 100 (1st element of array) do 340 mm (last), dlatego zawsze podczas zwracania odejmujemy wliczbę 100
+/*String inDoubleOutString(double dIncDouble, int nDlugoscStrOut, int nDlugoscPoPrzecinku)
+{
+  Serial.println("try funckje.cpp: inDoubleOutString()");
+  char a_p_chVal[15]; //stworz tablice char'ów
+  a_p_chVal[0] = (char)0; //powinno wyczyścić tablicę char'ów                                                         
+  String sVal = "";  //stworz i wyzeruj wyjsciowy string
+  dtostrf(dIncDouble, nDlugoscStrOut, nDlugoscStrOut, a_p_chVal); //zamień double na wskaźnik na tablicę char'ów
+  for (int i = 0; i < sizeof(a_p_chVal); i++) sVal += a_p_chVal[i]; //zamień wskaźnik na tablicę char'ów na string
+  Serial.println("done funckje.cpp: inDoubleOutString()");
+  return sVal; //zwróć stringa
+}*/
 
 void DodajDoPunktuPCzescRuchuRamienia()
 {
@@ -43,6 +44,7 @@ void DodajDoPunktuPCzescRuchuRamienia()
   Ramie.ZwiekszZpartTempem(); //PrintPosToLCD w już zawarte poprawce pionowej
   ServoA_kp.ZwiekszKPpartTempem(); //!!! tu ppwinno być przeliczanie na 'x' z 'kp'
   //Party (dYpart, dZpart, dKPpart) są zerami w ruchu ustawczym (pierwszym)
+  //Serial.println("done funckje.cpp: DodajDoPunktuPCzescRuchuRamienia()");
 }
 
 void WyrownanieTempowPoDodaniuOstatnichPartow()
@@ -51,9 +53,9 @@ void WyrownanieTempowPoDodaniuOstatnichPartow()
   Ramie.setZtemp( Ramie.getZ() ); //PrintPosToLCD w poprawce pionowej
   ServoA_kp.setKPtemp( ServoA_kp.getKat() ); //!!! tu ppwinno być przeliczanie na 'x' z 'kp'
 
-  Komunikaty.PokazInfo(INFO_ODLEGLOSC_Y, (String)Ramie.getYtemp() );
-  Komunikaty.PokazInfo(INFO_ODLEGLOSC_Z, (String)Ramie.getZtemp() );
-  Komunikaty.PokazInfo(INFO_KAT_KP, (String)ServoA_kp.getKPtemp() );
+ /* Komunikaty.PokazInfo(Ramie.getYtemp(), INFO_ODLEGLOSC_Y);
+  Komunikaty.PokazInfo(Ramie.getZtemp(), INFO_ODLEGLOSC_Z);
+  Komunikaty.PokazInfo(ServoA_kp.getKPtemp(), INFO_KAT_KP);*/
 }
 
 void ObliczPartyPrzemieszczenia()
@@ -78,7 +80,9 @@ void OgraniczenieWysokosci()
 {
   if (Ramie.getZtemp() >= 236) //dla najdalszych bierek maxymalne możliwe podniesienie ramienia to 236 (dalej jest to poza polem roboczym manipulatora). powinno to być liczone w...
   { //...zalezności od możliwości, ale póki co jest to zablokowane dla wszystkich pozycji.
-    Ramie.setZtemp(235); LCD_pos.PrintPos("z", Ramie.getZtemp() );
+    Ramie.setZtemp(235);
+    //LCD_pos.PrintPos("z", Ramie.getZtemp() ); //cała ta funkcja z jakiegos powodu nie chce ruszyc, nawet jak daje niby normalne wartosci
+    //Serial.println("done funckje.cpp: OgraniczenieWysokosci(): if function: LCD_pos.PrintPos('z', Ramie.getZtemp()");
     //nServoSpeed = 255; //osiągnij prędkośc dla serw maxymalną, by szybko wyjść z warunku blokującego ruch (w tym przypadku serwa się nie ruszają, więc prędkość maxymalna...
     //...serw jest tylko zmienną obliczeniową by w ułamku sekundy wyjśc z funkcji delay) - coś się tu pierdoli
   }
@@ -124,40 +128,58 @@ int PrzerwijPetle()
 
 void PrewencyjnieDociagnijDoZadanegoPolozenia()
 {
+  //Serial.println("try funckje.cpp: ServoA_kp.setKPtemp(ServoA_kp.getKat() );");
   ServoA_kp.setKPtemp(ServoA_kp.getKat() ); /*powtórne dla pierwszego ustawienia ramienia- nie szkodzi*/
+  //Serial.println("try funckje.cpp: Ramie.setYtemp(Ramie.getY() ); Ramie.setZtemp(Ramie.getZ() );");
   Ramie.setYtemp(Ramie.getY() );
   Ramie.setZtemp(Ramie.getZ() );
+  //Serial.println("done funckje.cpp: PrewencyjnieDociagnijDoZadanegoPolozenia()");
 }
 
 void UstawKatySerw()
 {
-  ServoA_kp.UstawKat(ServoA_kp.getKPtemp()); /*ServoA_kp.write(n_kp_temp, nServoSpeed, false);*/ //tutaj to nie zadziala. musi być warunek dla n_kp_temp (co?)
+  Ramie.ObliczPrzekatnaRamieniaL();
 
+  //Serial.println("try funckje.cpp: ServoA_kp.UstawKat(ServoA_kp.getKPtemp())");
+  ServoA_kp.UstawKat(90.0f);
+  /*ServoA_kp*///ServoB_alpha.UstawKat(90.0d /*ServoA_kp.getKPtemp()*/); /*ServoA_kp.write(n_kp_temp, nServoSpeed, false);*/ //tutaj to nie zadziala. musi być warunek dla n_kp_temp (co?)
+
+  //Serial.println("try funckje.cpp: ServoB_alpha.UstawKat(ServoB_alpha.ObliczKatAlfa(Ramie.getPrzekatnaRamieniaL(), Ramie.getDlugoscA(), Ramie.getDlugoscB(), Ramie.getYtemp()));");
   ServoB_alpha.UstawKat(ServoB_alpha.ObliczKatAlfa(Ramie.getPrzekatnaRamieniaL(), Ramie.getDlugoscA(), Ramie.getDlugoscB(), Ramie.getYtemp()));
   LCD_angle.PrintAngle("ServoB_alpha", ServoB_alpha.getKat() );
 
+  //Serial.println("try funckje.cpp: ServoC_beta.UstawKat(ServoC_beta.ObliczKatBeta(Ramie.getPrzekatnaRamieniaL(), Ramie.getDlugoscA(), Ramie.getDlugoscB(), &Komunikaty));");
   ServoC_beta.UstawKat(ServoC_beta.ObliczKatBeta(Ramie.getPrzekatnaRamieniaL(), Ramie.getDlugoscA(), Ramie.getDlugoscB(), &Komunikaty));
   LCD_angle.PrintAngle("ServoC_beta", ServoC_beta.getKat() );
 
+  //Serial.println("try funckje.cpp: ServoD_fi.ObliczKatFi(&Ramie, &ServoB_alpha, &ServoC_beta); ");
   //bardzo problematyczne jest ustawić kąt mechanicznie. zmieniam o n_fi_poprawka stopni do fi zawsze by wyszło tyle ile jest założone.
-  ServoD_fi.ObliczKatFi(&Ramie, &ServoB_alpha, &ServoC_beta); LCD_angle.PrintAngle("ServoD_fi", ServoD_fi.getKat() ); //!!!z jakis powodow tutaj predkosc ustawiona była na 35
+  ServoD_fi.ObliczKatFi(&Ramie, &ServoB_alpha, &ServoC_beta);
+  LCD_angle.PrintAngle("ServoD_fi", ServoD_fi.getKat() ); //!!!z jakis powodow tutaj predkosc ustawiona była na 35
 }
 
 void WykonajRuchRamieniem()
 {
-  ObliczPartyPrzemieszczenia(); //dla każdego normalnego podanego ruchu oblicz części ruchu do dodawania w pętli ruchu
+  ObliczPartyPrzemieszczenia(); //dla każdego podanego ruchu ramienia oblicz najmniejsze części ruchu jakie to ramię będzie wykonywało aż do zadanego punktu
   for (int i = 0; i < nWspRuchu; i++) //wykonuj cząstkowe ruchy "nWspRuchu" razy, aż ruch się wykona, lub do błędnych kątów serw. duży warunek.
   {
-    DodajDoPunktuPCzescRuchuRamienia();
-    if (i >= nWspRuchu - 1) WyrownanieTempowPoDodaniuOstatnichPartow(); //docelowy zadany punkt. jeśli gdzieś powstałyby minimalne błędy, to tu są naprawiane.
+    DodajDoPunktuPCzescRuchuRamienia(); //zwiększ aktualną pozycję ramienia o najmniejszą cząstkę ruchu minimalnie je przesuwając do zadanego punktu końcowego
+    if (i >= nWspRuchu - 1) WyrownanieTempowPoDodaniuOstatnichPartow(); //pośrednia funckja naprawiająca: ostatna dodana cząsteczka ruchu, tj. docelowy zadany punkt. jeśli gdzieś powstałyby minimalne błędy, to tu są naprawiane.
     //poniżej poprawka wysokosci - niech program myśli że jego zadane wartości są idealnie odwzorywane, a realnie obliczaj i ustawiaj kąty tak, by wyszło lepiej o skompensowany zmierzony błąd
-    Ramie.setZtemp(Ramie.getZtemp() + fWektorOdchylek[(int)Ramie.getYtemp()]);
-    LCD_pos.PrintPos("z", Ramie.getZtemp() ); //dodaj różnicę wysokości podstawy chwytaka i planszy
-    Komunikaty.PokazInfo(INFO_ODLEGLOSC_Z_UPGR, (String)Ramie.getZtemp() ); //poprawkę wysokości jako metoda ramienia
-    OgraniczenieWysokosci();
+    Ramie.setZtemp(Ramie.getZupgr());
+    LCD_pos.PrintPos("z", Ramie.getZupgr() ); //dodaj różnicę wysokości podstawy chwytaka i planszy
+    //Komunikaty.PokazInfo(Ramie.getZupgr(), INFO_ODLEGLOSC_Z_UPGR); 
+    OgraniczenieWysokosci(); //zanim obliczone wartości zostaną ustawione na silnikach sprawdź, czy nie wyszły poza dopuszczalne wartości. jeżeli wyszły to je w tej funkcji ogranicz
 
-    if (ServoB_alpha.getKat() <= 180 && ServoB_alpha.getKat() >= 0 && ServoC_beta.getKat() <= 157 && ServoC_beta.getKat() >= 24 && ServoD_fi.getKat() <= 180 && ServoD_fi.getKat() >= 45) UstawKatySerw(); // !!! dopuszczalne kąty.
-    else i = WartoscServaPozaDopuszczalnymZakresem(); //jeżeli kąt wyskoczył poza dopuszczalne wartości, to ustaw bezpieczne wartości, pokaż gdzie był błąd w zmiennych i wyjdź z pętli
+    if (ServoB_alpha.getKat() <= 180 && ServoB_alpha.getKat() >= 0 && ServoC_beta.getKat() <= 157 && ServoC_beta.getKat() >= 24 && ServoD_fi.getKat() <= 180 && ServoD_fi.getKat() >= 45) 
+    {
+      UstawKatySerw();
+    }
+    else 
+    {
+      //jeżeli kąt wyskoczył poza dopuszczalne wartości, to ustaw bezpieczne wartości, pokaż gdzie był błąd w zmiennych i wyjdź z pętli
+      i = WartoscServaPozaDopuszczalnymZakresem();
+    }
 
     delay(15000 / (Ramie.getPredkosc() * nWspRuchu)); //po każdej iteracji czekaj chwilę, aby serwa zdążyły powoli dojechać. współczynnik wyznaczony empirycznie (tj. na oko).
     if (bPrzerwaniePetli == true) i = PrzerwijPetle(); //wyjscie z petli for w szczegolnych wypadkach- error lub

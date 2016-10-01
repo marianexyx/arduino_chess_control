@@ -16,18 +16,29 @@ class cServoC : public cSilnik
 
   public:
     //----------------------------------------------------------KONSTRUKTOR----------------------------------------------------------//
-    cServoC(int nPin, String sNazwaKata, int nKatMin, int nKatMax, cLCD_angle* pLCD_angle, cLCD_pos* pLCD_pos, cKomunikacja* pKomunikacja)
+    cServoC(int nPin, String sNazwaKata, int nKatMin, int nKatMax, cLCD_angle* pLCD_angle, cLCD_pos* pLCD_pos/*, cKomunikacja* pKomunikacja*/)
     {
       _nPin = nPin;
       _sNazwaKata = sNazwaKata;
       _nKatMin = nKatMin;
       _nKatMax = nKatMax;
       _pLCD_angle = pLCD_angle;
+      _pLCD_pos = pLCD_pos;
       _nPredkosc = MOTOR_SPEED_NORMAL;
-      _pKomunikacja = pKomunikacja;
+      //_pKomunikacja = pKomunikacja;
     }
 
     //------------------------------------------------------------METODY-------------------------------------------------------------//
+    //servo beta dziala w przedziale od 24 do 157 stopni.
+    float ObliczKatBeta(double dL, double dA, double dB, cKomunikacja* pKomunikacja)
+    {
+      double dBetaRad = acos((dA * dA + dB * dB - dL * dL) / (2 * dA * dB)); //obliczanie bety w radianach
+      _dKat = (180 / PI) * dBetaRad; //kąt beta docelowy.
+      if (_dKat >= 157) _dKat = 156; //!!servo beta ma słaby zakres!!!
+      //pKomunikacja->PokazInfo(_dKat, INFO_KAT_BETA);
+      return _dKat;
+    }
+
     /*virtual*/ void UstawKatSerwisowo(String sKomendaRdzenia) //funckja serwisowa - !! to wrzucic do ktorejstam wirtualnej metody kazdego serva
     {
       int nKat = sKomendaRdzenia.substring(7).toInt();;
@@ -52,16 +63,6 @@ class cServoC : public cSilnik
         Serial.print(">: ");
         Serial.println(nKat);
       }
-    }
-
-    //servo beta dziala w przedziale od 24 do 157 stopni.
-    float ObliczKatBeta(double dL, double dA, double dB, cKomunikacja* pKomunikacja)
-    {
-      double dBetaRad = acos((dA * dA + dB * dB - dL * dL) / (2 * dA * dB)); //obliczanie bety w radianach
-      _fKat = (180 / PI) * dBetaRad; //kąt beta docelowy.
-      if (_fKat >= 157) _fKat = 156; //!!servo beta ma słaby zakres!!!
-      pKomunikacja->PokazInfo(INFO_KAT_BETA, (String)_fKat);
-      return _fKat;
     }
 };
 

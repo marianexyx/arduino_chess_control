@@ -4,7 +4,9 @@
 #include <VarSpeedServo.h> //biblioteka odpowiedzialna za powolny ruch serw (nowa funkcja write() )
 #include <LiquidCrystal.h> //panele lcd
 #include <math.h> //cosinusy, PI itd
+#include <stdlib.h> // dla dtostrf
 #include "Arduino.h" //chyba to jest potrzebne do includów or smtg, ale chyba nie tu, tj. tu jest a utomatu
+
 #include "silnik.h"
 #include "lcd_pos.h"
 #include "lcd_angle.h"
@@ -21,14 +23,16 @@
 cLCD_angle LCD_angle(32, 30, 28, 26, 24, 22, 16, 2);
 cLCD_pos LCD_pos(33, 31, 29, 27, 25, 23, 20, 2);
 
-cKomunikacja Komunikaty;
+//cKomunikacja Komunikaty(&ServoA_kp, &ServoB_alpha, &ServoC_beta, &ServoD_fi, &ServoE_ks1, &ServoF_ks2, &Ramie);
 
 cServoA ServoA_kp(2, "kp", 15, 175, &LCD_angle, &LCD_pos, &Komunikaty);
-cServoB ServoB_alpha(3, "alpha", 0, 180, &LCD_angle, &LCD_pos, &Komunikaty); // !!za duże wartości!!
-cServoC ServoC_beta(4, "beta", 24, 157, &LCD_angle, &LCD_pos, &Komunikaty);
+cServoB ServoB_alpha(3, "alpha", 0, 180, &LCD_angle, &LCD_pos/*, &Komunikaty*/); // !!za duże wartości!!
+cServoC ServoC_beta(4, "beta", 24, 157, &LCD_angle, &LCD_pos/*, &Komunikaty*/);
 cServoD ServoD_fi(5, "fi", 45, 180, &LCD_angle, &LCD_pos, &Komunikaty);
 cServoEF ServoE_ks1(6, "ks1", 82, 131, &LCD_angle, &LCD_pos, &Komunikaty); //nie potrzeba by działało dla szerszych wartości
-cServoEF ServoF_ks2(7, "ks2", 200-131, 200-82, &LCD_angle, &LCD_pos, &Komunikaty); //2gie servo w szczekach jest obrocone(180 stopno) i przesuniete o 20 stopni w dzialaniu
+cServoEF ServoF_ks2(7, "ks2", 200-131, 200-82, &LCD_angle, &LCD_pos/*, &Komunikaty*/); //2gie servo w szczekach jest obrocone(180 stopno) i przesuniete o 20 stopni w dzialaniu
+
+cKomunikacja Komunikaty(&ServoA_kp, &ServoB_alpha, &ServoC_beta, &ServoD_fi, &ServoE_ks1, &ServoF_ks2, &Ramie);
 
 cSzachownica Szachownica(&Komunikaty,  &LCD_pos);
 cRamie Ramie(&Komunikaty, &LCD_angle, &ServoE_ks1, &ServoF_ks2);
@@ -43,6 +47,8 @@ bool bPrzerwaniePetli = false; //przerywa pętle po wstepnym ustawieniu serw (by
 //-------------------------------------------------------------SETUP-------------------------------------------------------------//
 void setup() //kod kóry wykona się raz
 {
+  Serial.begin(9600);
+
   ServoA_kp.Rozpocznij(); ServoB_alpha.Rozpocznij(); ServoC_beta.Rozpocznij();
   ServoD_fi.Rozpocznij(); ServoE_ks1.Rozpocznij(); ServoF_ks2.Rozpocznij();
 
@@ -59,7 +65,7 @@ void setup() //kod kóry wykona się raz
   digitalWrite(SERVO_POWER_PIN2, HIGH);
 
   sCoreCommand = "(184,296)"; //ustawienie dla pierwszego uruchomienia łapy. dla tego punktu P(y,z) wszystkie ważne serwa powinny mieć ustawione 90 stopni po przejściu przez kod
-  Serial.begin(9600); //Rozpocznij komunikację po usb z prędkośćią 9600 bitów/s
+  Serial.println("Podano automatycznie pierwszy ruch: (184,296)");
 }
 
 //-------------------------------------------------------------MAIN-------------------------------------------------------------//
@@ -93,11 +99,11 @@ void loop() //wieczna główna pętla programu
         Reset();
         WykonajRuchRamieniem();
         break;
-      case CC_UP:
+      case CC_UP: //ruch po osi 'y' (w górę)
         Ramie.Up();
         WykonajRuchRamieniem();
         break;
-      case CC_DOWN:
+      case CC_DOWN: //ruch po osi 'y' (w dół)
         Ramie.Down();
         WykonajRuchRamieniem();
         break;
@@ -106,7 +112,7 @@ void loop() //wieczna główna pętla programu
         Ramie.setZ(sCoreCommand.substring(5,8).toInt()); // ustaw z
         WykonajRuchRamieniem();
         break;
-      case CC_XYZ: // (yyy,zzz,a1) - ruch (serwisowy) na 3 plaszczyznach
+      case CC_XYZ: // (yyy,zzz,a1) - ruch (serwisowy) na wszystkich 3 plaszczyznach
         Ramie.setY(sCoreCommand.substring(1,4).toInt()); // ustaw y
         Ramie.setZ(sCoreCommand.substring(5,8).toInt()); // ustaw z
         Szachownica.OkreslLiterePola(sCoreCommand);
@@ -114,7 +120,7 @@ void loop() //wieczna główna pętla programu
         Szachownica.ObliczKatPodstawy(); // na podstawie litery i cyfry pola szachownicy
         WykonajRuchRamieniem();
         break;
-      case CC_XY: // [a1] - ruch (z rdzenia) na 2 plaszczyznach: x,y
+      case CC_XY: // np. [a1] - ruch (z rdzenia) na 2 plaszczyznach: x,y
         Szachownica.OkreslLiterePola(sCoreCommand);
         Szachownica.OkreslCyfrePola(sCoreCommand);
         Szachownica.ObliczKatPodstawy(); //na podstawie litery i cyfry pola szachownicy
@@ -123,5 +129,6 @@ void loop() //wieczna główna pętla programu
         break;
       default:  Serial.println(sCoreCommand); break;
     }
+    sCoreCommand = "";
   }
 }

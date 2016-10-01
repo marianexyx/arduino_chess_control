@@ -23,8 +23,8 @@ class cServoD : public cSilnik
       _sNazwaKata = sNazwaKata;
       _nKatMin = nKatMin;
       _nKatMax = nKatMax;
-      _pKomunikacja = pKomunikacja;
       _pLCD_angle = pLCD_angle;
+      _pLCD_pos = pLCD_pos;
       _nPredkosc = MOTOR_SPEED_NORMAL;
       _nFiPoprawka = -1;
       _pKomunikacja = pKomunikacja;
@@ -69,14 +69,15 @@ class cServoD : public cSilnik
         this->UstawKat(179, MOTOR_SPEED_FAST, true); //poprzez parametr true ramie wykona najpierw podniesienie, zanim kod ruszy dalej
         delay(10); //nie wiem czemu to służy, ale używane tego przy wartości true na tutorialu, więc nie zaszkodzi
         _pLCD_angle->PrintAngle("ServoD_fi", 179); // ! dodac _nFiPoprawka ? (arcysczegol)
-        _pKomunikacja->PokazInfo(INFO_KAT_FI, "179");
+        //_pKomunikacja->PokazInfo(179.0d, INFO_KAT_FI);
       }
       else if (pRamie->getDownState() == false || _pKomunikacja->getSekwencjaRuchow() == false) //jezeli ramie nie schodzilo w dół i nie mamy doczynienia zk omenda serwisowa
       {
         int nKatFi = 270 - pServoB->getKat() - pServoC->getKat() + _nFiPoprawka;
         this->UstawKat(nKatFi, MOTOR_SPEED_FAST);
-        _pLCD_angle->PrintAngle("ServoD_fi", nKatFi); // ! dodac _nFiPoprawka ? (arcysczegol)
-        _pKomunikacja->PokazInfo(INFO_KAT_FI, (String)nKatFi);
+        _pLCD_angle->PrintAngle("ServoD_fi", _dKat); // ! dodac _nFiPoprawka ? (arcysczegol)
+        //Serial.println("testy_obliczkatfi");
+        //_pKomunikacja->PokazInfo((String)nKatFi, INFO_KAT_FI); //UstawKat ma juz w sobie ta opcje
       }
       else Serial.println("error: UstawFiDoKolejnegoRuchu");
     }

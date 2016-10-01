@@ -73,8 +73,8 @@ class cServoA : public cSilnik
     }
 
     //----------------------------------------------------METODY-DOSTĘPOWE-DO-PÓL----------------------------------------------------//
-    int getKPpart() const                          { return _dKPpart; }
-    int getKPtemp() const                          { return _dKPtemp; }
+    double getKPpart() const                          { return _dKPpart; }
+    double getKPtemp() const                          { return _dKPtemp; }
 
     void setKPpart(double dKPpart)                 { _dKPpart = dKPpart; }
     void setKPtemp(double dKPtemp)                 { _dKPtemp = dKPtemp; }

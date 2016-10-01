@@ -15,30 +15,31 @@ class cServoB : public cSilnik
 
   public:
     //----------------------------------------------------------KONSTRUKTOR----------------------------------------------------------//
-    cServoB(int nPin, String sNazwaKata, int nKatMin, int nKatMax, cLCD_angle* pLCD_angle, cLCD_pos* pLCD_pos, cKomunikacja* pKomunikacja)
+    cServoB(int nPin, String sNazwaKata, int nKatMin, int nKatMax, cLCD_angle* pLCD_angle, cLCD_pos* pLCD_pos/*, cKomunikacja* pKomunikacja*/)
     {
       _nPin = nPin;
       _sNazwaKata = sNazwaKata;
       _nKatMin = nKatMin;
       _nKatMax = nKatMax;
       _pLCD_angle = pLCD_angle;
+      _pLCD_pos = pLCD_pos;
       _nPredkosc = MOTOR_SPEED_NORMAL;
-      _pKomunikacja = pKomunikacja;
+      //_pKomunikacja = pKomunikacja;
     }
 
     //------------------------------------------------------------METODY-------------------------------------------------------------//
-    float ObliczKatAlfa(double dL, double dA, double dB, double dYtemp)
+    double ObliczKatAlfa(double dL, double dA, double dB, double dYtemp)
     {
       //pre_alpha 1 i 2 pomocnicze przy liczeniu kątów serw (problem z zasięgiem zmiennych)
       double dPreAlpha1Rad = (dL * dL + dA * dA - dB * dB) / (2 * dL * dA); //obliczanie alpha1 w radianach bez acos
       double dPreAlpha2Rad = dYtemp / dL; //obliczanie alpha2 w radianach bez acos
       double dAlphaRad = acos(dPreAlpha1Rad) + acos(dPreAlpha2Rad); //cały kąt alpha w radianach
       double dAlpha = (180 / PI) * dAlphaRad; //docelowy kąt alpha
-      _fKat = dAlpha;
+      _dKat = dAlpha;
 
-      _pKomunikacja->PokazInfo(INFO_KAT_ALPHA, (String)_fKat);
+      //_pKomunikacja->PokazInfo(_dKat, INFO_KAT_ALPHA);
 
-      return _fKat;
+      return _dKat;
     }
 
     /*virtual*/ void UstawKatSerwisowo(String sKomendaRdzenia) //funckja serwisowa
@@ -69,8 +70,8 @@ class cServoB : public cSilnik
 
     void PodniesPrewencyjnie()  //prewencyjne odsunięcie od planszy
     {
-      _Servo.write(_fKat + 8, MOTOR_SPEED_NORMAL, true); //!!!! normalnie predkosc = 6
-      _pLCD_angle->PrintAngle("servoB", _fKat);
+      _Servo.write(_dKat + 8, MOTOR_SPEED_NORMAL, true); //!!!! normalnie predkosc = 6
+      _pLCD_angle->PrintAngle("servoB", _dKat);
     }
 };
 
