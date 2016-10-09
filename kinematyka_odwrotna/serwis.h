@@ -1,6 +1,8 @@
 #ifndef serwis_h
 #define serwis_h
 
+#pragma once
+
 #include "Arduino.h"
 #include "silnik.h"
 #include "komunikacja.h"
@@ -14,6 +16,7 @@ class cSerwis
   private:
     cKomunikacja* _pKomunikacja;
     cRamie* _pRamie;
+    
     int _nPredkoscSerwisowa; // program co zakończenie ruchu ramieniem wraca prędkoscią poruszania ramienia do stałej normalnej prędkosci. jeżeli ręcznie zmienimy tą ...
     //...prędkość funkcją serwisową "speed =" to program będzie utrzymywał prędkość tej tutaj zmiennej. na starcie ustawione jest 0, by omijać tą zmienną, jak nic nie jest zmienione.
     
@@ -28,7 +31,7 @@ class cSerwis
     void WlaczInfo();
     void WylaczInfo();
 
-    //----------------------------------------------------METODY-DOSTĘPOWE-DO-PÓL----------------------------------------------------//
+    //----------------------------------------------------METODY-DOSTĘPOWE-DO-PÓL----------------------------------------------------//   
     int getPredkoscSerwisowa() const                          { return _nPredkoscSerwisowa; }
 };
 

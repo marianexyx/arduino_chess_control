@@ -13,6 +13,7 @@ class cServoD : public cSilnik
 {
   private: //wskazniki LCD sa dziedziczone
     cKomunikacja* _pKomunikacja;
+    
     int _nFiPoprawka; //programowo zmienione fi, jako że mechanicznie bardzo ciężko jest to ustalić z taką dokładkością
 
   public:

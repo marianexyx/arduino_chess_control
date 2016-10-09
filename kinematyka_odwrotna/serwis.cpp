@@ -5,6 +5,7 @@ cSerwis::cSerwis(cKomunikacja* pKomunikacja, cRamie* pRamie)
 {
   _pKomunikacja = pKomunikacja;
   _pRamie = pRamie;
+
   _nPredkoscSerwisowa = 0;
 }
 
@@ -37,3 +38,4 @@ void cSerwis::WylaczInfo() //wyłącz info- analogicznie do tego powyżej. ardui
   _pKomunikacja->PokazujInfo(false);
   _pKomunikacja->OdpowiedzNaRdzen("info off");
 }
+

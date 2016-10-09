@@ -12,6 +12,8 @@
 class cServoA : public cSilnik
 {
   private: //wskazniki LCD sa dziedziczone
+    cKomunikacja* _pKomunikacja;
+  
     double _dKPpart; //zwiększane kawałki od aktualnego punktu P do nowopodanego punktu P (w iteracjach)
     double _dKPtemp; //tymczasowy y,z,kp do obliczen (używane przy d_y_part, d_z_part, d_kp_part)
 

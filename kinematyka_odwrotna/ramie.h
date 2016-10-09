@@ -1,13 +1,15 @@
 #ifndef ramie_h
 #define ramie_h
 
+#pragma once
+
 #include "Arduino.h"
 #include <VarSpeedServo.h>
 #include "silnik.h"
 #include "komunikacja.h"
 #include "lcd_angle.h"
 
-float fWektorOdchylek[] = { -11, -10.9, -10.8, -10.7, -10.6, -10.5, -10.4, -10.3, -10.2, -10.1, -10, -9.7, -9.4, -9.1, -8.8, -8.5, -8.2, -7.9, -7.6, -7.3, -7, -7.3, -7.6, -7.9, -8.2,
+/*float fWektorOdchylek[] = { -11, -10.9, -10.8, -10.7, -10.6, -10.5, -10.4, -10.3, -10.2, -10.1, -10, -9.7, -9.4, -9.1, -8.8, -8.5, -8.2, -7.9, -7.6, -7.3, -7, -7.3, -7.6, -7.9, -8.2,
                             -8.5, -8.8, -9.1, -9.4, -9.7, -10, -9.5, -9, -8.5, -8, -7.5, -7, -6.5, -6, -5.5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -4.9, -4.8, -4.7, -4.6, -4.5, -4.4, -4.3, -4.2, -4.1, -4,
                             -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -3.7, -3.4, -3.1, -2.8, -2.5, -2.2, -1.9, -1.6, -1.3, -1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6,
                             0.7, 0.8, 0.9, 1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8, 8.2,
@@ -16,9 +18,9 @@ float fWektorOdchylek[] = { -11, -10.9, -10.8, -10.7, -10.6, -10.5, -10.4, -10.3
                             24.2, 24.6, 25, 25.3, 25.6, 25.9, 26.2, 26.5, 26.8, 27.1, 27.4, 27.7, 28, 27.9, 27.8, 27.7, 27.6, 27.5, 27.4, 27.3, 27.2, 27.1, 27, 27.9, 28.8, 29.7, 30.6, 31.5, 32.4, 33.3, 34.2, 35.1,
                             36
                           }; //wektor poprawek wysokości (oś z). wyliczony doświadczalnie (nigdy poprawki nie są idealne). wektor koryguje wartości z zakresu //!! na pewno 241 to rozmiar tej tablicy?
-//od y = 100 (1st element of array) do 340 mm (last), dlatego zawsze podczas zwracania odejmujemy wliczbę 100
+//od y = 100 (1st element of array) do 340 mm (last), dlatego zawsze podczas zwracania odejmujemy wliczbę 100*/
 
-class cSilnik;
+//class cSilnik;
 
 class cRamie: public cSilnik
 {
@@ -40,6 +42,7 @@ class cRamie: public cSilnik
     double _dYtemp, _dZtemp; //tymczasowy y,z do obliczen (używane przy d_y_part, d_z_part)
     bool _bUp, _bDown; //zmienne informują czy w danych ruchu ramienia było ono podnoszone, czy opuszczane (ważne dla prostowania serwa kąta fi, by nic nie wywrócić).
     int _nKatSzczeki; //środek zakresu pracy serwa
+    const float _fWektorOdchylek[241]; //stały wektor poprawek, będzie w liscie inicjalizacyjenj
 
   public:
     //----------------------------------------------------------KONSTRUKTOR----------------------------------------------------------//
@@ -63,7 +66,7 @@ class cRamie: public cSilnik
     double getX() const                        { return _dX; }
     double getY() const                        { return _dY; }
     double getZ() const                        { return _dZ; }
-    double getZupgr() const                    { return _dZ + fWektorOdchylek[(int)_dYtemp]; }
+    double getZupgr() const                    { return _dZ + _fWektorOdchylek[(int)_dYtemp]; }
     int getDlugoscZ1() const                   { return _nZ1; }
     double getYtemp() const                    { return _dYtemp; } 
     double getYpart() const                    { return _dYpart; } 

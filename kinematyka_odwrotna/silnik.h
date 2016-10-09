@@ -11,8 +11,6 @@
 
 enum MOTOR_SPEED { MOTOR_SPEED_SLOW  = 2, MOTOR_SPEED_NORMAL = 18, MOTOR_SPEED_FAST  = 70, MOTOR_SPEED_MAX   = 255 };
 
-String inDoubleOutString(double dIncDouble, int nDlugoscStrOut = 6, int nDlugoscPoPrzecinku = 2);
-
 class cLCD_angle;
 
 class cSilnik //virtual?
@@ -24,11 +22,9 @@ class cSilnik //virtual?
     double _dKat; 
     int _nKatMin;
     int _nKatMax;
-    //String _sKat;
     VarSpeedServo _Servo;
     cLCD_angle* _pLCD_angle; 
     cLCD_pos* _pLCD_pos;
-    //cKomunikacja* _pKomunikacja;
 
  public:
     //----------------------------------------------------------KONSTRUKTORY---------------------------------------------------------//

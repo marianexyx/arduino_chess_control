@@ -12,6 +12,7 @@
 class cServoEF : public cSilnik
 {
   private: //wskazniki LCD sa dziedziczone
+      //cKomunikacja* _pKomunikacja;
     
   public:
     //----------------------------------------------------------KONSTRUKTOR----------------------------------------------------------//

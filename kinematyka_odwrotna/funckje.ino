@@ -136,9 +136,25 @@ void PrewencyjnieDociagnijDoZadanegoPolozenia()
   //Serial.println("done funckje.cpp: PrewencyjnieDociagnijDoZadanegoPolozenia()");
 }
 
+void PokazPozycjeRamienia()
+{
+  if (Komunikaty.CzyPokazujeInfo() == true)
+  {
+    Serial.print("kp = "); Serial.print(ServoA_kp.getKat());
+    Serial.print(", alpha= "); Serial.print(ServoB_alpha.getKat());
+    Serial.print(", beta= "); Serial.print(ServoC_beta.getKat()); if ((int)ServoC_beta.getKat() >= 157) Serial.print("!!!");
+    Serial.print(", fi= "); Serial.print(ServoD_fi.getKat());
+    Serial.print(" | y = "); Serial.print(Ramie.getYtemp()); //Ramie.getYtemp() + Z???
+    Serial.print(", z = "); Serial.print(Ramie.getZtemp());   //wysokość będzie podawana ta, którą dopiero chcemy realnie osiągnąć poprzez kompensację błędu chwilę dalej, a którą zadaliśmy
+    Serial.print(", z_upgr = "); Serial.print(Ramie.getZupgr()); if ((int)Ramie.getZupgr() >= 236) Serial.println("!!!"); else Serial.println("");
+  }
+}
+
 void UstawKatySerw()
 {
   Ramie.ObliczPrzekatnaRamieniaL();
+
+  PokazPozycjeRamienia();
 
   //Serial.println("try funckje.cpp: ServoA_kp.UstawKat(ServoA_kp.getKPtemp())");
   ServoA_kp.UstawKat(90.0f);

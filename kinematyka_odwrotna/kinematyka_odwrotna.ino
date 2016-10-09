@@ -11,9 +11,9 @@
 #include "lcd_pos.h"
 #include "lcd_angle.h"
 #include "komunikacja.h"
-#include "serwis.h"
 #include "szachownica.h"
-#include "ramie.h"
+//#include "ramie.h"
+#include "serwis.h"
 #include "servo_a.h"
 #include "servo_b.h"
 #include "servo_c.h"
@@ -23,16 +23,14 @@
 cLCD_angle LCD_angle(32, 30, 28, 26, 24, 22, 16, 2);
 cLCD_pos LCD_pos(33, 31, 29, 27, 25, 23, 20, 2);
 
-//cKomunikacja Komunikaty(&ServoA_kp, &ServoB_alpha, &ServoC_beta, &ServoD_fi, &ServoE_ks1, &ServoF_ks2, &Ramie);
+cKomunikacja Komunikaty;
 
 cServoA ServoA_kp(2, "kp", 15, 175, &LCD_angle, &LCD_pos, &Komunikaty);
 cServoB ServoB_alpha(3, "alpha", 0, 180, &LCD_angle, &LCD_pos/*, &Komunikaty*/); // !!za duże wartości!!
 cServoC ServoC_beta(4, "beta", 24, 157, &LCD_angle, &LCD_pos/*, &Komunikaty*/);
 cServoD ServoD_fi(5, "fi", 45, 180, &LCD_angle, &LCD_pos, &Komunikaty);
-cServoEF ServoE_ks1(6, "ks1", 82, 131, &LCD_angle, &LCD_pos, &Komunikaty); //nie potrzeba by działało dla szerszych wartości
-cServoEF ServoF_ks2(7, "ks2", 200-131, 200-82, &LCD_angle, &LCD_pos/*, &Komunikaty*/); //2gie servo w szczekach jest obrocone(180 stopno) i przesuniete o 20 stopni w dzialaniu
-
-cKomunikacja Komunikaty(&ServoA_kp, &ServoB_alpha, &ServoC_beta, &ServoD_fi, &ServoE_ks1, &ServoF_ks2, &Ramie);
+cServoEF ServoE_ks1(6, "ks1", 82, 131, &LCD_angle, &LCD_pos/*, &Komunikaty*/); //nie potrzeba by działało dla szerszych wartości
+cServoEF ServoF_ks2(7, "ks2", 200-131, 200-82, &LCD_angle, &LCD_pos/*i, &Komunikaty*/); //2gie servo w szczekach jest obrocone(180 stopno) i przesuniete o 20 stopni w dzialaniu
 
 cSzachownica Szachownica(&Komunikaty,  &LCD_pos);
 cRamie Ramie(&Komunikaty, &LCD_angle, &ServoE_ks1, &ServoF_ks2);

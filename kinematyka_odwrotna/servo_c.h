@@ -7,7 +7,7 @@
 #include "silnik.h"
 #include "lcd_angle.h"
 #include "lcd_pos.h"
-#include "komunikacja.h"
+//#include "komunikacja.h"
 #include <math.h>
 
 class cServoC : public cSilnik
