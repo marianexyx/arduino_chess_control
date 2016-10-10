@@ -44,7 +44,9 @@ void cRamie::ObliczPrzekatnaRamieniaL()
   unsigned long ulZ0; //odległość punktu P(y,z) od wysokośći na której jest servoB w pionie (wartość obliczana dopiero jak podane jest "z" w "P").
 
   ulYkwadrat = (unsigned long)_dYtemp * (unsigned long)_dYtemp;
-  ulZ0 = (unsigned long)_dZtemp - _nZ1; //odległość punktu P(y,z) od wysokośći na której jest servoB w pionie- założenie, że punkt nigdy nie jest poniżej serva (nigdy nie będzie)
+  //ulZ0 = (unsigned long)_dZtemp - _nZ1; //poprzednia wersja ktora nie uwzgledniala Zupgr, ale dzialala
+  //odległość punktu P(y,z) od wysokośći na której jest servoB w pionie- założenie, że punkt nigdy nie jest poniżej serva (nigdy nie będzie)
+  ulZ0 = (unsigned long)this->getZupgr() - _nZ1; //??? moge zwracac wartosc w powietrze???
   ulZ0kwadrat = ulZ0 * ulZ0;
   cRamie::_dL = static_cast<double>(sqrt(ulZ0kwadrat + ulYkwadrat) ); //przekątna od servaB do punktu P(y,z)
 }

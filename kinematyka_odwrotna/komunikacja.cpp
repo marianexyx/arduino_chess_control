@@ -90,7 +90,7 @@ void cKomunikacja::ServoPozaZakresem()
     Serial.print("alpha_rad= "); Serial.println(alpha_rad);
     Serial.print("pre_beta_rad= "); Serial.println(pre_beta_rad);
     Serial.print("beta_rad= "); Serial.println(beta_rad);*/ //teog troche mi się nie chce. musiałbym się uczyć wrzucać cały obiekt w argumenty innego obiektu. może kiedyś
-  Serial.println("Error: Servo poza zakresem dopuszczalnych kątów");
+  Serial.println("Error: Servo poza zakresem dopuszczalnych katow");
 }
 
 void cKomunikacja::PokazInfo(double dZmiennaDoPokazania, INFO_TYPE TypInformacji)

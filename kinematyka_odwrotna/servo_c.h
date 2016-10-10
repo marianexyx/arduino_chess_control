@@ -42,10 +42,8 @@ class cServoC : public cSilnik
     /*virtual*/ void UstawKatSerwisowo(String sKomendaRdzenia) //funckja serwisowa - !! to wrzucic do ktorejstam wirtualnej metody kazdego serva
     {
       int nKat = sKomendaRdzenia.substring(7).toInt();;
-      int nOgraniczenieKataDolne = 24;  //nienajlepsze serwo powoduje wąski przedział działających wartości
-      int nOgraniczenieKataGorne = 157;
 
-      if (nKat >= nOgraniczenieKataDolne && nKat <= nOgraniczenieKataDolne)
+      if (nKat <= _nKatMin && nKat >= _nKatMax)
       {
         this->UstawKat(nKat);
         _pLCD_angle->PrintAngle(_sNazwaKata, this->getKat() );
@@ -57,11 +55,7 @@ class cServoC : public cSilnik
       else
       {
         Serial.print("Kat beta podany poza zakresem: <");
-        Serial.print(nOgraniczenieKataDolne);
-        Serial.print(",");
-        Serial.print(nOgraniczenieKataDolne);
-        Serial.print(">: ");
-        Serial.println(nKat);
+        Serial.print(_nKatMin); Serial.print(","); Serial.print(_nKatMax); Serial.print(">: ");  Serial.println(_dKat);
       }
     }
 };

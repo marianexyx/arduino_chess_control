@@ -45,10 +45,8 @@ class cServoB : public cSilnik
     /*virtual*/ void UstawKatSerwisowo(String sKomendaRdzenia) //funckja serwisowa
     {
       int nKat = sKomendaRdzenia.substring(8).toInt();
-      int nOgraniczenieKataDolne = 0;
-      int nOgraniczenieKataGorne = 180;
 
-      if (nKat >= nOgraniczenieKataDolne && nKat <= nOgraniczenieKataDolne)
+      if (nKat <= _nKatMin && nKat >= _nKatMax)
       {
         this->UstawKat(nKat);
         _pLCD_angle->PrintAngle(_sNazwaKata, this->getKat());
@@ -60,17 +58,13 @@ class cServoB : public cSilnik
       else
       {
         Serial.print("Kat alpha podany poza zakresem: <");
-        Serial.print(nOgraniczenieKataDolne);
-        Serial.print(",");
-        Serial.print(nOgraniczenieKataDolne);
-        Serial.print(">: ");
-        Serial.println(nKat);
+        Serial.print(_nKatMin); Serial.print(","); Serial.print(_nKatMax); Serial.print(">: ");  Serial.println(_dKat);
       }
     }
 
     void PodniesPrewencyjnie()  //prewencyjne odsunięcie od planszy
     {
-      _Servo.write(_dKat + 8, MOTOR_SPEED_NORMAL, true); //!!!! normalnie predkosc = 6
+      _Servo.write(_dKat + 8, MOTOR_SPEED_RISE_ALPHA, true); //!!!! normalnie predkosc = 6
       _pLCD_angle->PrintAngle("servoB", _dKat);
     }
 };

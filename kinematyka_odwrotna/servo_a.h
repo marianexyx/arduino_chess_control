@@ -40,10 +40,8 @@ class cServoA : public cSilnik
     /*virtual*/ void UstawKatSerwisowo(String sKomendaRdzenia) 
     {
       int nKat = sKomendaRdzenia.substring(5).toInt();
-      int nOgraniczenieKataDolne = 15;  //poza zakresem tym nie bardzo reagowało serwo
-      int nOgraniczenieKataGorne = 165;
 
-      if (nKat >= nOgraniczenieKataDolne && nKat <= nOgraniczenieKataDolne)
+      if (nKat <= _nKatMin && nKat >= _nKatMax)
       {
         this->UstawKat(nKat);
         _pLCD_angle->PrintAngle(_sNazwaKata, this->getKat());
@@ -56,11 +54,7 @@ class cServoA : public cSilnik
       else
       {
         Serial.print("Kat podstawy podany poza zakresem: <");
-        Serial.print(nOgraniczenieKataDolne);
-        Serial.print(",");
-        Serial.print(nOgraniczenieKataDolne);
-        Serial.print(">: ");
-        Serial.println(nKat);
+        Serial.print(_nKatMin); Serial.print(","); Serial.print(_nKatMax); Serial.print(">: ");  Serial.println(_dKat);
       }
     }
 

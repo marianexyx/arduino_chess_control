@@ -98,11 +98,11 @@ void loop() //wieczna główna pętla programu
         WykonajRuchRamieniem();
         break;
       case CC_UP: //ruch po osi 'y' (w górę)
-        Ramie.Up();
+        Ramie.Up(); //zmienia tylko wartość osi z
         WykonajRuchRamieniem();
         break;
       case CC_DOWN: //ruch po osi 'y' (w dół)
-        Ramie.Down();
+        Ramie.Down(); //zmienia tylko wartość osi z
         WykonajRuchRamieniem();
         break;
       case CC_YZ: // (yyy,zzz) - ruch (serwisowy) na 2 plaszczyznach: y,z
@@ -115,14 +115,12 @@ void loop() //wieczna główna pętla programu
         Ramie.setZ(sCoreCommand.substring(5,8).toInt()); // ustaw z
         Szachownica.OkreslLiterePola(sCoreCommand);
         Szachownica.OkreslCyfrePola(sCoreCommand);
-        Szachownica.ObliczKatPodstawy(); // na podstawie litery i cyfry pola szachownicy
         WykonajRuchRamieniem();
         break;
       case CC_XY: // np. [a1] - ruch (z rdzenia) na 2 plaszczyznach: x,y
         Szachownica.OkreslLiterePola(sCoreCommand);
         Szachownica.OkreslCyfrePola(sCoreCommand);
-        Szachownica.ObliczKatPodstawy(); //na podstawie litery i cyfry pola szachownicy
-        Ramie.setY(Szachownica.Oblicz_y());
+        Ramie.setY(Szachownica.Oblicz_y()); // długość ramienia od jego podstawy do podanego środka pola planszy, czyli 'y'
         WykonajRuchRamieniem();
         break;
       default:  Serial.println(sCoreCommand); break;

@@ -25,26 +25,12 @@ void SprawdzTypPolecenia(String sKomendaRdzenia)
   else KomendaRdzenia = CC_ELSE;
 }
 
-/*String inDoubleOutString(double dIncDouble, int nDlugoscStrOut, int nDlugoscPoPrzecinku)
-{
-  Serial.println("try funckje.cpp: inDoubleOutString()");
-  char a_p_chVal[15]; //stworz tablice char'ów
-  a_p_chVal[0] = (char)0; //powinno wyczyścić tablicę char'ów                                                         
-  String sVal = "";  //stworz i wyzeruj wyjsciowy string
-  dtostrf(dIncDouble, nDlugoscStrOut, nDlugoscStrOut, a_p_chVal); //zamień double na wskaźnik na tablicę char'ów
-  for (int i = 0; i < sizeof(a_p_chVal); i++) sVal += a_p_chVal[i]; //zamień wskaźnik na tablicę char'ów na string
-  Serial.println("done funckje.cpp: inDoubleOutString()");
-  return sVal; //zwróć stringa
-}*/
-
 void DodajDoPunktuPCzescRuchuRamienia()
 {
-  //do obliczeń potrzebuje integerów
   Ramie.ZwiekszYpartTempem(); LCD_pos.PrintPos("y", Ramie.getYtemp() );   //od ostatniej pozycji powoli jedź do nowej podanej
   Ramie.ZwiekszZpartTempem(); //PrintPosToLCD w już zawarte poprawce pionowej
-  ServoA_kp.ZwiekszKPpartTempem(); //!!! tu ppwinno być przeliczanie na 'x' z 'kp'
+  ServoA_kp.ZwiekszKPpartTempem(); // tu ppwinno być przeliczanie na 'x' z 'kp'... ale daje radę z tym
   //Party (dYpart, dZpart, dKPpart) są zerami w ruchu ustawczym (pierwszym)
-  //Serial.println("done funckje.cpp: DodajDoPunktuPCzescRuchuRamienia()");
 }
 
 void WyrownanieTempowPoDodaniuOstatnichPartow()
@@ -63,16 +49,22 @@ void ObliczPartyPrzemieszczenia()
   if (Ramie.getYtemp() == 0 || Ramie.getZtemp() == 0 || ServoA_kp.getKPtemp() == 0) //jeżeli nie było jeszcze żadnego przejścia przez pętle ruchu (tj. nie ma zapisnego ruchu poprzedniego) to tempy są zerami
   {
     Ramie.setYtemp(Ramie.getY() ); LCD_pos.PrintPos("y", Ramie.getY() ); //tempy odpowiadają za pamiętanie poprzednio osiąganych 'y' i 'z'...
-    Ramie.setYtemp(Ramie.getZ() ); LCD_pos.PrintPos("z", Ramie.getZ() );  //...dzięki temu program zna drogę ramienia skąd-dokąd
+    Ramie.setZtemp(Ramie.getZ() ); LCD_pos.PrintPos("z", Ramie.getZ() );  //...dzięki temu program zna drogę ramienia skąd-dokąd
     ServoA_kp.setKPtemp(ServoA_kp.getKat() ); LCD_pos.PrintPos("kp", ServoA_kp.getKat() );
     bPrzerwaniePetli = true; //dzięki tej zmiennej po złapaniu pozycji pierwszej i zarazem docelowej przy pierwszym ruchu program nie przechodzi bez sensu przez całą pętle ruchu, tylko...
     //...przerywa ją po 1 przejściu.
   }
   else  //dla każdego normalnego podanego ruchu oblicz części ruchu do dodawania w pętli ruchu
   {
+    Serial.print("y temp = "); Serial.print(Ramie.getYtemp()); Serial.print(", y = "); Serial.print(Ramie.getY()); 
+    Serial.print(" | z temp = "); Serial.print(Ramie.getZtemp()); Serial.print(", z = "); Serial.print(Ramie.getZ()); 
+    Serial.print(" | kp temp = "); Serial.print(ServoA_kp.getKPtemp()); Serial.print(", kp = "); Serial.println(ServoA_kp.getKat()); 
     Ramie.setYpart((Ramie.getY() - Ramie.getYtemp() ) / nWspRuchu ); // floaty. minusowe wartosci dla zmiennej, jezeli punkt jest "z tyłu" (tzn. nowa wartość osi 'y', 'z', 'kp' jest mniejsza od poprzedniej).
     Ramie.setZpart((Ramie.getZ() - Ramie.getZtemp() ) / nWspRuchu );
-    ServoA_kp.setKPtemp((ServoA_kp.getKat() - ServoA_kp.getKPtemp() ) / nWspRuchu );
+    ServoA_kp.setKPpart((ServoA_kp.getKat() - ServoA_kp.getKPtemp() ) / nWspRuchu );
+    Serial.print("y part = "); Serial.print(Ramie.getYpart()); 
+    Serial.print(", z part = "); Serial.print(Ramie.getZpart()); 
+    Serial.print(", kp part = "); Serial.println(ServoA_kp.getKPpart()); 
   }
 }
 
@@ -82,7 +74,6 @@ void OgraniczenieWysokosci()
   { //...zalezności od możliwości, ale póki co jest to zablokowane dla wszystkich pozycji.
     Ramie.setZtemp(235);
     //LCD_pos.PrintPos("z", Ramie.getZtemp() ); //cała ta funkcja z jakiegos powodu nie chce ruszyc, nawet jak daje niby normalne wartosci
-    //Serial.println("done funckje.cpp: OgraniczenieWysokosci(): if function: LCD_pos.PrintPos('z', Ramie.getZtemp()");
     //nServoSpeed = 255; //osiągnij prędkośc dla serw maxymalną, by szybko wyjść z warunku blokującego ruch (w tym przypadku serwa się nie ruszają, więc prędkość maxymalna...
     //...serw jest tylko zmienną obliczeniową by w ułamku sekundy wyjśc z funkcji delay) - coś się tu pierdoli
   }
@@ -154,21 +145,16 @@ void UstawKatySerw()
 {
   Ramie.ObliczPrzekatnaRamieniaL();
 
-  PokazPozycjeRamienia();
+  PokazPozycjeRamienia(); //jezeli info jest ustawione na true
 
-  //Serial.println("try funckje.cpp: ServoA_kp.UstawKat(ServoA_kp.getKPtemp())");
-  ServoA_kp.UstawKat(90.0f);
-  /*ServoA_kp*///ServoB_alpha.UstawKat(90.0d /*ServoA_kp.getKPtemp()*/); /*ServoA_kp.write(n_kp_temp, nServoSpeed, false);*/ //tutaj to nie zadziala. musi być warunek dla n_kp_temp (co?)
+  ServoA_kp.UstawKat((double)Szachownica.ObliczKatPodstawy()); // na podstawie litery i cyfry pola szachownicy);
 
-  //Serial.println("try funckje.cpp: ServoB_alpha.UstawKat(ServoB_alpha.ObliczKatAlfa(Ramie.getPrzekatnaRamieniaL(), Ramie.getDlugoscA(), Ramie.getDlugoscB(), Ramie.getYtemp()));");
   ServoB_alpha.UstawKat(ServoB_alpha.ObliczKatAlfa(Ramie.getPrzekatnaRamieniaL(), Ramie.getDlugoscA(), Ramie.getDlugoscB(), Ramie.getYtemp()));
   LCD_angle.PrintAngle("ServoB_alpha", ServoB_alpha.getKat() );
 
-  //Serial.println("try funckje.cpp: ServoC_beta.UstawKat(ServoC_beta.ObliczKatBeta(Ramie.getPrzekatnaRamieniaL(), Ramie.getDlugoscA(), Ramie.getDlugoscB(), &Komunikaty));");
   ServoC_beta.UstawKat(ServoC_beta.ObliczKatBeta(Ramie.getPrzekatnaRamieniaL(), Ramie.getDlugoscA(), Ramie.getDlugoscB(), &Komunikaty));
   LCD_angle.PrintAngle("ServoC_beta", ServoC_beta.getKat() );
 
-  //Serial.println("try funckje.cpp: ServoD_fi.ObliczKatFi(&Ramie, &ServoB_alpha, &ServoC_beta); ");
   //bardzo problematyczne jest ustawić kąt mechanicznie. zmieniam o n_fi_poprawka stopni do fi zawsze by wyszło tyle ile jest założone.
   ServoD_fi.ObliczKatFi(&Ramie, &ServoB_alpha, &ServoC_beta);
   LCD_angle.PrintAngle("ServoD_fi", ServoD_fi.getKat() ); //!!!z jakis powodow tutaj predkosc ustawiona była na 35
@@ -180,22 +166,17 @@ void WykonajRuchRamieniem()
   for (int i = 0; i < nWspRuchu; i++) //wykonuj cząstkowe ruchy "nWspRuchu" razy, aż ruch się wykona, lub do błędnych kątów serw. duży warunek.
   {
     DodajDoPunktuPCzescRuchuRamienia(); //zwiększ aktualną pozycję ramienia o najmniejszą cząstkę ruchu minimalnie je przesuwając do zadanego punktu końcowego
-    if (i >= nWspRuchu - 1) WyrownanieTempowPoDodaniuOstatnichPartow(); //pośrednia funckja naprawiająca: ostatna dodana cząsteczka ruchu, tj. docelowy zadany punkt. jeśli gdzieś powstałyby minimalne błędy, to tu są naprawiane.
+    if (i >= nWspRuchu - 1) WyrownanieTempowPoDodaniuOstatnichPartow(); //pośrednia funkcja naprawiająca: ostatna dodana cząsteczka ruchu, tj. docelowy zadany punkt... 
+    //..Jeśli gdzieś powstałyby minimalne błędy, to tu są naprawiane.
     //poniżej poprawka wysokosci - niech program myśli że jego zadane wartości są idealnie odwzorywane, a realnie obliczaj i ustawiaj kąty tak, by wyszło lepiej o skompensowany zmierzony błąd
-    Ramie.setZtemp(Ramie.getZupgr());
+    //Ramie.setZtemp(Ramie.getZupgr());
     LCD_pos.PrintPos("z", Ramie.getZupgr() ); //dodaj różnicę wysokości podstawy chwytaka i planszy
-    //Komunikaty.PokazInfo(Ramie.getZupgr(), INFO_ODLEGLOSC_Z_UPGR); 
-    OgraniczenieWysokosci(); //zanim obliczone wartości zostaną ustawione na silnikach sprawdź, czy nie wyszły poza dopuszczalne wartości. jeżeli wyszły to je w tej funkcji ogranicz
+    OgraniczenieWysokosci(); //zanim obliczone wartości zostaną ustawione na silnikach sprawdź, czy nie wyszły poza dopuszczalne wartości. jeżeli wyszły to je w tej funkcji ogranicz...
+    //...czy ta powyzsza funkcja nie powinna byc za obliczaniem z_upgr?
 
-    if (ServoB_alpha.getKat() <= 180 && ServoB_alpha.getKat() >= 0 && ServoC_beta.getKat() <= 157 && ServoC_beta.getKat() >= 24 && ServoD_fi.getKat() <= 180 && ServoD_fi.getKat() >= 45) 
-    {
-      UstawKatySerw();
-    }
-    else 
-    {
-      //jeżeli kąt wyskoczył poza dopuszczalne wartości, to ustaw bezpieczne wartości, pokaż gdzie był błąd w zmiennych i wyjdź z pętli
-      i = WartoscServaPozaDopuszczalnymZakresem();
-    }
+    //!! ten warunek ponizej jakos niepotrzebne bo to samo dzieje sie w ciele klasy
+    if (ServoB_alpha.getKat() <= 180 && ServoB_alpha.getKat() >= 0 && ServoC_beta.getKat() <= 157 && ServoC_beta.getKat() >= 24 && ServoD_fi.getKat() <= 180 && ServoD_fi.getKat() >= 45) UstawKatySerw();
+    else  i = WartoscServaPozaDopuszczalnymZakresem(); //jeżeli kąt wyskoczył poza dopuszczalne wartości, to ustaw bezpieczne wartości, pokaż gdzie był błąd w zmiennych i wyjdź z pętli
 
     delay(15000 / (Ramie.getPredkosc() * nWspRuchu)); //po każdej iteracji czekaj chwilę, aby serwa zdążyły powoli dojechać. współczynnik wyznaczony empirycznie (tj. na oko).
     if (bPrzerwaniePetli == true) i = PrzerwijPetle(); //wyjscie z petli for w szczegolnych wypadkach- error lub
@@ -203,8 +184,10 @@ void WykonajRuchRamieniem()
 
   PrewencyjnieDociagnijDoZadanegoPolozenia(); //wartości mimo iż są ok, przypisywane są jeszcze raz, bo możliwe że po wielu przejściach kąty będą się przesuwać o małe wartości
   //UstawFiDoKolejnegoRuchu(&Ramie, &ServoB_alpha, &ServoA_kp);
-  if (Ramie.getDownState() == false && Komunikaty.InfoDlaRdzenia() != "r_trashed")  ServoB_alpha.PodniesPrewencyjnie(); //jeżeli funkcja nie wykonywała ruchu typu down ani usuwania bierki to podnies prewecyjnie, aby nie wywracało bierek skrajnych
 
+  //jeżeli funkcja nie wykonywała ruchu typu down ani usuwania bierki to podnies prewecyjnie, aby nie wywracało bierek skrajnych
+  if (Ramie.getDownState() == false && Komunikaty.InfoDlaRdzenia() != "r_trashed")  ServoB_alpha.PodniesPrewencyjnie(); 
+ 
   if (Komunikaty.getSekwencjaRuchow() == true) //jeżeli mieliśmy do czynienia z ruchem generowanym z gry/ze strony
   {
     if (Komunikaty.InfoDlaRdzenia() == "armUp2") //jeżeli był to ostatni ruch z sekwencji przemieszczania pionka

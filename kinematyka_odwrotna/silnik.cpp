@@ -50,7 +50,6 @@ void cSilnik::UstawKat(double dKat, int nPedkoscServa , bool bCzekajNaKoniecRuch
     Serial.print("Kat "); Serial.print(_sNazwaKata); Serial.print(" podany poza zakresem <"); 
     Serial.print(_nKatMin); Serial.print(","); Serial.print(_nKatMax); Serial.print(">: ");  Serial.println(_dKat);
   }
-  //Serial.println("try Silnik.h: after if statement");
 }
 
 /*void cSilnik::UstawKatSerwisowo(String sKomendaRdzenia) //funckja serwisowa - !! to wrzucic do ktorejstam wirtualnej metody kazdego serva

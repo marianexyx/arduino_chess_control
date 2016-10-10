@@ -11,7 +11,7 @@ class cSzachownica
   private:
     cKomunikacja* _pKomunikacja;
     cLCD_pos* _pLCD_pos;
-    String _sLiteraPola;
+    String _sLiteraPola; //w zasadzie zdublowana zmienna _nWsp_m, tylko w bardziej przyjaznej reprezentacji
     double _dCyfraPola; 
     int _nWsp_m; //interpretacja pola planszy szachownicy (liczby). "m" może operować wartościami od 3 do -4 (ważne dla obliczeń).
     float _f_y0, _fDlugoscPola, _fBladSrodka; //na podstawie tych wartości i 4 skrajnych pól szachownicy liczone są położenia wszsytkich innych pól planszy w grze.
@@ -28,7 +28,6 @@ class cSzachownica
 
     double ObliczSkladowa_y_DlaKataPodstawy();
     double ObliczSkladowa_x_DlaKataPodstawy();
-
 
   public:
     //----------------------------------------------------------KONSTRUKTOR----------------------------------------------------------//
