@@ -14,7 +14,9 @@ void cSerwis::ZmienPredkosc(String sKomendaRdzenia) //funckja serwisowa. ustawia
 {
   _nPredkoscSerwisowa = sKomendaRdzenia.substring(8).toInt();
   _pRamie->setPredkosc(_nPredkoscSerwisowa);
-  Serial.print("servo speed = "); Serial.println(sKomendaRdzenia.substring(8));
+  _pKomunikacja->PokazInfo((double)_nPredkoscSerwisowa, INFO_SPEED); //nie wyswietlamy tego w _pRamie->setPredkosc, bo predkosc zmienia sie kilka razy w 1 ruchu
+  //String sServoSpeed = "servo speed = " + sKomendaRdzenia.substring(8);
+  //Serial.print("servo speed = "); Serial.println(sKomendaRdzenia.substring(8));
 }
 void cSerwis::WlaczSerwa() //daj zasilanie na serwa...
 {

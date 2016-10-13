@@ -3,9 +3,12 @@ void SprawdzTypPolecenia(String sKomendaRdzenia)
 {
   //enum CORE_COMMAND { CC_RESET, CC_UP, CC_DOWN, CC_SPEED, CC_TURNON, CC_TURNOFF, CC_INFOON, CC_INFOOFF, CC_KP, CC_ALPHA, CC_BETA, CC_FI, CC_KS, CC_OPEN, CC_CLOSE, CC_TRASH, CC_YZ, CC_XYZ, CC_XY, CC_ELSE };
   //CORE_COMMAND KomendaRdzenia;
+  //jeżeli ruch podany jest bez jego typu (normlany, raszada, bicie, itd) to przyjmij ruch jako normalny dodając "n_" z przodu
+  if (sKomendaRdzenia.substring(2, 3) != "_" && (sKomendaRdzenia.substring(0, 2) == "up" ||sKomendaRdzenia.substring(0, 4) == "down" || 
+      sKomendaRdzenia.substring(0, 4) == "open" || sKomendaRdzenia.substring(0, 5) == "close" || sKomendaRdzenia.substring(0, 5) == "trash" || 
+      (sKomendaRdzenia.substring(0, 1) == "[" && sCoreCommand.substring(3, 4) == "]"))) sKomendaRdzenia = "n_" + sKomendaRdzenia; 
+  
   if (sKomendaRdzenia.substring(0, 5) == "reset") KomendaRdzenia = CC_RESET;
-  else if (sKomendaRdzenia.substring(2, 4) == "up") KomendaRdzenia = CC_UP;
-  else if (sKomendaRdzenia.substring(2, 6) == "down") KomendaRdzenia = CC_DOWN;
   else if (sKomendaRdzenia.substring(0, 7) == "speed =") KomendaRdzenia = CC_SPEED;
   else if (sKomendaRdzenia.substring(0, 7) == "turn on") KomendaRdzenia = CC_TURNON;
   else if (sKomendaRdzenia.substring(0, 8) == "turn off") KomendaRdzenia = CC_TURNOFF;
@@ -16,6 +19,8 @@ void SprawdzTypPolecenia(String sKomendaRdzenia)
   else if (sKomendaRdzenia.substring(0, 6) == "beta =") KomendaRdzenia = CC_BETA;
   else if (sKomendaRdzenia.substring(0, 4) == "fi =") KomendaRdzenia = CC_FI;
   else if (sKomendaRdzenia.substring(0, 4) == "ks =") KomendaRdzenia = CC_KS;
+  else if (sKomendaRdzenia.substring(2, 4) == "up") KomendaRdzenia = CC_UP;
+  else if (sKomendaRdzenia.substring(2, 6) == "down") KomendaRdzenia = CC_DOWN;
   else if (sKomendaRdzenia.substring(2, 6) == "open") KomendaRdzenia = CC_OPEN;
   else if (sKomendaRdzenia.substring(2, 7) == "close") KomendaRdzenia = CC_CLOSE;
   else if (sKomendaRdzenia.substring(2, 7) == "trash") KomendaRdzenia = CC_TRASH;
@@ -58,10 +63,10 @@ void ObliczPartyPrzemieszczenia()
   {
     Serial.print("y temp = "); Serial.print(Ramie.getYtemp()); Serial.print(", y = "); Serial.print(Ramie.getY()); 
     Serial.print(" | z temp = "); Serial.print(Ramie.getZtemp()); Serial.print(", z = "); Serial.print(Ramie.getZ()); 
-    Serial.print(" | kp temp = "); Serial.print(ServoA_kp.getKPtemp()); Serial.print(", kp = "); Serial.println(ServoA_kp.getKat()); 
+    Serial.print(" | kp temp = "); Serial.print(ServoA_kp.getKPtemp()); Serial.print(", kp = "); Serial.println(Szachownica.ObliczKatPodstawy()); 
     Ramie.setYpart((Ramie.getY() - Ramie.getYtemp() ) / nWspRuchu ); // floaty. minusowe wartosci dla zmiennej, jezeli punkt jest "z tyłu" (tzn. nowa wartość osi 'y', 'z', 'kp' jest mniejsza od poprzedniej).
     Ramie.setZpart((Ramie.getZ() - Ramie.getZtemp() ) / nWspRuchu );
-    ServoA_kp.setKPpart((ServoA_kp.getKat() - ServoA_kp.getKPtemp() ) / nWspRuchu );
+    ServoA_kp.setKPpart(((double)Szachownica.ObliczKatPodstawy() - ServoA_kp.getKPtemp() ) / nWspRuchu );
     Serial.print("y part = "); Serial.print(Ramie.getYpart()); 
     Serial.print(", z part = "); Serial.print(Ramie.getZpart()); 
     Serial.print(", kp part = "); Serial.println(ServoA_kp.getKPpart()); 
@@ -147,7 +152,7 @@ void UstawKatySerw()
 
   PokazPozycjeRamienia(); //jezeli info jest ustawione na true
 
-  ServoA_kp.UstawKat((double)Szachownica.ObliczKatPodstawy()); // na podstawie litery i cyfry pola szachownicy);
+  ServoA_kp.UstawKat(ServoA_kp.getKPtemp()); // na podstawie litery i cyfry pola szachownicy);
 
   ServoB_alpha.UstawKat(ServoB_alpha.ObliczKatAlfa(Ramie.getPrzekatnaRamieniaL(), Ramie.getDlugoscA(), Ramie.getDlugoscB(), Ramie.getYtemp()));
   LCD_angle.PrintAngle("ServoB_alpha", ServoB_alpha.getKat() );

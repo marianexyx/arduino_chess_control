@@ -23,6 +23,7 @@ enum INFO_TYPE {INFO_FIELD_LETTER,
                 INFO_CLOSE,
                 INFO_UP,
                 INFO_DOWN,
+                INFO_SPEED,
                 INFO_ELSE
                };
 
@@ -41,8 +42,8 @@ class cKomunikacja
 
     //------------------------------------------------------------METODY-------------------------------------------------------------//
     void PrzygotujOdpowiedzNaRdzen(String sPolecenieRdzenia);
-    void OdpowiedzNaRdzen(String sMsgPart);
-    void OdpowiedzNaRdzen(String sMsgPart1, String sMsgPart2);
+    //void OdpowiedzNaRdzen(String sMsgPart);
+    void OdpowiedzNaRdzen(String sMsgPart1, String sMsgPart2 = "");
     void ServoPozaZakresem();
     void PokazInfo(double dZmiennaDoPokazania, INFO_TYPE TypInformacji = INFO_ELSE);
 

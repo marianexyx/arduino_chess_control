@@ -47,7 +47,7 @@ void cKomunikacja::PrzygotujOdpowiedzNaRdzen(String sPolecenieRdzenia)
   _sInfoDlaRdzenia = sTypRuchuBierki + sTypRuchuRamienia + sKtoryTakiRuch;
 }
 
-void cKomunikacja::OdpowiedzNaRdzen(String sMsgPart) // ! moge z tego zrobic jeda funkcje z tą z dołu
+/*void cKomunikacja::OdpowiedzNaRdzen(String sMsgPart) // ! moge z tego zrobic jeda funkcje z tą z dołu
 {
   if (_bZnakiKoncowLinii == true)
   {
@@ -58,12 +58,11 @@ void cKomunikacja::OdpowiedzNaRdzen(String sMsgPart) // ! moge z tego zrobic jed
   {
     Serial.println(sMsgPart);
   }
-}
+}*/
 
 void cKomunikacja::OdpowiedzNaRdzen(String sMsgPart1, String sMsgPart2)
 {
   String sAnswer;
-  Serial.println("testy w OdpowiedzNaRdzen");
   if (_bZnakiKoncowLinii == true)
   {
     sAnswer = "@" + sMsgPart1 + sMsgPart2 + "$";
