@@ -1,2 +1,3 @@
 # arduino_chess_control
-Program na Arduino IDE będący łącznikiem elektroniki i mechaniki z komputerem sterującym.
+ARCHIVE REPOSITORY: 
+Code for Arduino Mega. Program controls self made robotic arm, for playing chess, and communicate with PC core/server via USB.
